@@ -78,7 +78,7 @@
         "operation": "upsert",
         "schema": {
           "__rl": true,
-          "value": "public",
+          "value": "global",
           "mode": "name"
         },
         "table": {
@@ -925,7 +925,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "58dcb391-5938-49f7-b22f-19a7eeab9173",
+  "versionId": "6f7e9dbc-594a-4025-9398-257f9417e2df",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"

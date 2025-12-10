@@ -880,6 +880,27 @@
         -2320,
         160
       ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "TRUNCATE TABLE global.vat_companies RESTART IDENTITY;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2768,
+        832
+      ],
+      "id": "28c4a617-5ce9-482e-8e7e-dbc434736a3e",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "connections": {
@@ -959,6 +980,11 @@
         [
           {
             "node": "Hash Schema Name",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute a SQL query",
             "type": "main",
             "index": 0
           }
@@ -1088,7 +1114,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1d8e40f4-f4b3-415a-a831-c86c60f079da",
+  "versionId": "91957e17-67f4-416a-975f-56839cc19044",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
