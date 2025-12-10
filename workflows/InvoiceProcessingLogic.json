@@ -2479,64 +2479,6 @@
       }
     }
   ],
-  "pinData": {
-    "When Executed by Another Workflow": [
-      {
-        "json": {
-          "doc_title": "ต้นฉบับใบกำกับภาษี",
-          "invoice_number": "75697",
-          "date_raw": "16/08/2025",
-          "vendor_name": "บริษัท สยาม บี.ยู.อิมปอร์ต-เอ็กซ์ปอร์ต จำกัด",
-          "vendor_vat_id": "0105534087004",
-          "vendor_branch": "00000",
-          "buyer_name": "บริษัท บีเซลล์ เทคโนโลยี จำกัด",
-          "buyer_vat_id": "0745558001007",
-          "buyer_branch": "00000",
-          "buyer_address_raw": "35/3 หมู่ที่ 5 ถ.เศรษฐกิจ 1 ต.คอกกระบือ อ.เมืองสมุทรสาคร จ.สมุทรสาคร 74000",
-          "net_amount": 46000,
-          "vat_amount": 3220,
-          "grand_total": 49220,
-          "has_invoice": true,
-          "invoice_reason": "",
-          "amount_ok": true,
-          "amount_mode": "exclusive",
-          "amount_reason": "",
-          "vat_rate_used": 0.07,
-          "tolerance_cents_used": 1,
-          "net_amount_fixed": 46000,
-          "vat_amount_fixed": 3220,
-          "grand_total_fixed": 49220,
-          "fileName": "16.08.68 EXP-20250800035 สยาม บี.ยู.อิมปอร์ต.75697 VAT.pdf",
-          "directory": "/home/node/.n8n-files/VAT/สยามบียู",
-          "path": "/home/node/.n8n-files/VAT/สยามบียู/16.08.68 EXP-20250800035 สยาม บี.ยู.อิมปอร์ต.75697 VAT.pdf",
-          "schema": "s_vat_syambiyu_530b9e5d",
-          "id": 50,
-          "batch_name": "Batch 2025-12-10T08:31:44.168Z",
-          "total_files": 6,
-          "completed_files": 0,
-          "created_at": "2025-12-10T08:31:44.198Z",
-          "updated_at": "2025-12-10T08:31:44.198Z",
-          "status": "pending",
-          "batch_id": 50
-        },
-        "binary": {
-          "data": {
-            "mimeType": "application/pdf",
-            "fileType": "pdf",
-            "fileExtension": "pdf",
-            "data": "filesystem-v2",
-            "directory": "/home/node/.n8n-files/VAT/สยามบียู",
-            "fileName": "16.08.68 EXP-20250800035 สยาม บี.ยู.อิมปอร์ต.75697 VAT.pdf",
-            "id": "filesystem-v2:workflows/iEKjKX9xAzj9UpeH/executions/167/binary_data/3857bb01-99cf-49ef-bb54-ad8e58799272",
-            "fileSize": "872 kB"
-          }
-        },
-        "pairedItem": {
-          "item": 0
-        }
-      }
-    ]
-  },
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
