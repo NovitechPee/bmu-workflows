@@ -1,0 +1,36 @@
+# Secrets
+**/.env
+
+# Data Directories
+postgres/data/
+loki/data/
+loki/boltdb-shipper-active/
+loki/boltdb-shipper-cache/
+loki/chunks/
+loki/compactor/
+loki/rules/
+loki/wal/
+# Grafana
+grafana/grafana.db
+grafana/plugins/
+grafana/png/
+grafana/csv/
+grafana/pdf/
+grafana/sessions/
+pgadmin/
+n8n-data/
+n8n-files/
+account_ui/.git
+
+# System
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+
+# Prometheus
+prometheus/data/
+
+# Logs
+*.log

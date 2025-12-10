@@ -1,0 +1,935 @@
+{
+  "name": "RD VAT Lookup",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "56395505-9f17-4328-93c5-90170a1f0727",
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rdws.rd.go.th/serviceRD3/vatserviceRD3.asmx",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/soap+xml; charset=utf-8",
+        "body": "=<soap:Envelope\n    xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\"\n    xmlns:vat=\"https://rdws.rd.go.th/serviceRD3/vatserviceRD3\">\n  <soap:Header/>\n  <soap:Body>\n    <vat:Service>\n      <vat:TIN>{{ $json.vat_id }}</vat:TIN>\n      <vat:ProvinceCode>0</vat:ProvinceCode>\n      <vat:BranchNumber>{{ $json.branch_id || '00000' }}</vat:BranchNumber>\n      <vat:AmphurCode>0</vat:AmphurCode>\n    </vat:Service>\n  </soap:Body>\n</soap:Envelope>",
+        "options": {}
+      },
+      "id": "0782dfd3-4237-4e76-9f5d-4bf7df72e0e7",
+      "name": "HTTP: RD VAT Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1616,
+        256
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "77623806-5992-40fe-871c-41561414082b",
+      "name": "XML to JSON",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\n\nfunction clean(val) {\n  const x = String(val ?? '').trim();\n  return x === '-' ? '' : x;\n}\n\nfunction getField(obj, field) {\n  const sr = obj?.[\"soap:Envelope\"]?.[\"soap:Body\"]?.ServiceResponse?.ServiceResult ?? {};\n  const v = sr[field];\n  if (v == null) return '';\n  if (typeof v === 'string' || typeof v === 'number') return String(v);\n  if (v.anyType !== undefined) {\n    const a = v.anyType;\n    if (typeof a === 'string' || typeof a === 'number') return String(a);\n    if (a && typeof a._ !== 'undefined') return String(a._);\n  }\n  if (typeof v._ !== 'undefined') return String(v._);\n  return '';\n}\n\nfunction parseError(obj) {\n  // 1. Check for SOAP Error (Business Logic Error from RD)\n  const sr = obj?.[\"soap:Envelope\"]?.[\"soap:Body\"]?.ServiceResponse?.ServiceResult ?? {};\n  if (sr.vmsgerr) return clean(sr.vmsgerr);\n\n  // 2. Check for n8n Node Error (Network/Timeout/HTTP 5xx)\n  if (obj.error) {\n     return clean(obj.error.message || obj.error.description || JSON.stringify(obj.error));\n  }\n  \n  // 3. Check for raw errorMessage field\n  if (obj.errorMessage) return clean(obj.errorMessage);\n\n  return '';\n}\n\nfor (let i=0; i<items.length; i++) {\n  const item = items[i];\n  const json = item.json;\n  \n  // Check for error first\n  const errMsg = parseError(json);\n  \n  // If error exists, return failed status immediately\n  if (errMsg) {\n      out.push({\n        json: {\n          ...json,\n          rd_vat_id: json.vat_id || '', // Keep original input if possible\n          rd_branch_number: json.branch_id || '',\n          rd_company_name: '',\n          rd_address_raw: '',\n          rd_error_message: errMsg,\n          rd_success: false\n        },\n        pairedItem: { item: i }\n      });\n      continue;\n  }\n\n  // Normal parsing\n  const vatId = clean(getField(json, 'vNID'));\n  const branchRaw = clean(getField(json, 'vBranchNumber'));\n  const branchNumber = branchRaw === '0' || branchRaw === '' ? '00000' : branchRaw.padStart(5, '0');\n  \n  const titleName = clean(getField(json, 'vtitleName'));\n  const companyNameMain = clean(getField(json, 'vName'));\n  const companyName = `${titleName} ${companyNameMain}`.trim();\n\n  const addressObj = {\n    houseNo: clean(getField(json, 'vHouseNumber')),\n    moo: clean(getField(json, 'vMooNumber')),\n    village: clean(getField(json, 'vVillageName')),\n    building: clean(getField(json, 'vBuildingName')),\n    floor: clean(getField(json, 'vFloorNumber')),\n    room: clean(getField(json, 'vRoomNumber')),\n    soi: clean(getField(json, 'vSoiName')),\n    street: clean(getField(json, 'vStreetName')),\n    subDistrict: clean(getField(json, 'vThambol')),\n    district: clean(getField(json, 'vAmphur')),\n    province: clean(getField(json, 'vProvince')),\n    postcode: clean(getField(json, 'vPostCode')),\n    yaek: clean(getField(json, 'vYaek')),\n  };\n\n  // Build raw address string\n  const parts = [];\n  if (addressObj.houseNo) parts.push(addressObj.houseNo);\n  if (addressObj.moo) parts.push(\"หมู่ \" + addressObj.moo);\n  if (addressObj.village) parts.push(\"หมู่บ้าน\" + addressObj.village);\n  if (addressObj.building) parts.push(\"อาคาร\" + addressObj.building);\n  if (addressObj.floor) parts.push(\"ชั้น \" + addressObj.floor);\n  if (addressObj.room) parts.push(\"ห้อง \" + addressObj.room);\n  if (addressObj.soi) parts.push(\"ซอย\" + addressObj.soi);\n  if (addressObj.yaek) parts.push(\"แยก \" + addressObj.yaek);\n  if (addressObj.street) parts.push(\"ถนน\" + addressObj.street);\n  \n  const isBangkok = /กรุงเทพมหานคร/.test(addressObj.province);\n  if (addressObj.subDistrict) parts.push((isBangkok ? \"แขวง \" : \"ต.\") + addressObj.subDistrict);\n  if (addressObj.district) parts.push((isBangkok ? \"เขต \" : \"อ.\") + addressObj.district);\n  \n  if (addressObj.province) {\n    parts.push(isBangkok ? addressObj.province : \"จ.\" + addressObj.province);\n  }\n  if (addressObj.postcode) parts.push(addressObj.postcode);\n  \n  const address_raw = parts.join(\" \").replace(/\\s+/g, \" \").trim();\n\n  out.push({\n    json: {\n      ...json, // keep original input\n      rd_vat_id: vatId,\n      rd_branch_number: branchNumber,\n      rd_company_name: companyName,\n      rd_address_raw: address_raw,\n      rd_error_message: '',\n      rd_success: Boolean(vatId)\n    },\n    pairedItem: { item: i }\n  });\n}\n\nreturn out;\n"
+      },
+      "id": "d051d351-a203-4211-8216-d0873d3b1a3c",
+      "name": "Normalize RD Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1216,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "98bcb756-6d1a-48e3-bba2-3f3cbfb58975",
+      "name": "Merge Input",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1008,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "vat_companies",
+          "mode": "list",
+          "cachedResultName": "vat_companies"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "vat_id": "={{ $json.rd_vat_id }}",
+            "branch": "={{ $json.rd_branch_number }}",
+            "company_name": "={{ $json.rd_company_name }}",
+            "address": "={{ $json.rd_address_raw }}"
+          },
+          "matchingColumns": [
+            "vat_id",
+            "branch"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vat_id",
+              "displayName": "vat_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1669604d-59d3-4251-a23b-127eefd1cebe",
+      "name": "Upsert VAT Company",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -672,
+        112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "buyer",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2654ec7d-a691-4f81-9604-3c116d954c6c",
+      "name": "Switch Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst out = [];\n\nconst THAI_DIGITS = \"๐๑๒๓๔๕๖๗๘๙\";\n\n// ฟังก์ชันแปลงเลขไทยเป็นเลขอารบิก\nfunction toWesternDigits(s) {\n  return String(s ?? \"\").replace(/[๐-๙]/g, d => String(THAI_DIGITS.indexOf(d)));\n}\n\n// ฟังก์ชันทำความสะอาดช่องว่างและอักขระพิเศษ\nfunction cleanSpaces(s) {\n  return String(s ?? \"\")\n    .replace(/[   -‍  　﻿]/g, \" \") // แปลง whitespace ประหลาดเป็น space ปกติ\n    .replace(/[\\t\\n]+/g, \" \")    // แปลง tab/newline เป็น space\n    .replace(/\\s+/g, \" \")        // ยุบ space ซ้ำๆ เหลืออันเดียว\n    .trim();\n}\n\n// ฟังก์ชันจัดรูปแบบที่อยู่ไทยให้เป็นมาตรฐานเดียวกัน\nfunction normalizeThaiAddress(raw) {\n  if (raw == null) return null;\n  let s = toWesternDigits(String(raw));\n  s = cleanSpaces(s);\n  \n  // แก้ไขคำย่อและ OCR error ที่พบบ่อย\n  // เช่น \"จ.5\" (อาจจะเป็น หมู่ 5 ที่ OCR อ่านผิด) -> \"หมู่ 5\"\n  s = s.replace(/จ\\.\\s*(\\d+)/g, \"หมู่ $1\");\n  s = s.replace(/หมู่บ้าน\\s*(\\d+)/g, \"หมู่ $1\");\n  \n  // ขยายคำย่อมาตรฐาน\n  s = s.replace(/จ\\.\\s*/g, \"จังหวัด \");\n  s = s.replace(/ต\\.\\s*/g, \"ตำบล \");\n  s = s.replace(/อ\\.\\s*/g, \"อำเภอ \");\n  s = s.replace(/ถ\\.\\s*/g, \"ถนน \");\n  \n  // ลบเครื่องหมายวรรคตอนที่ไม่จำเป็นในการเปรียบเทียบ\n  s = s.replace(/[.,\\-]/g, \" \");\n  \n  return cleanSpaces(s);\n}\n\n// ฟังก์ชันตรวจสอบว่าเป็น Subset ของคำกันและกันหรือไม่\nfunction isSubset(source, target) {\n  if (!source || !target) return false;\n  // แยก Source เป็นคำๆ\n  const sourceWords = source.split(\" \").filter(w => w.trim().length > 0);\n  // Target ตัดช่องว่างทิ้งหมดเพื่อรอค้นหา\n  const targetCombined = target.replace(/\\s+/g, \"\");\n  // ตรวจว่าทุกคำใน Source ต้องปรากฏอยู่ใน Target\n  return sourceWords.every(word => targetCombined.includes(word));\n}\n\n// วนลูป Process ทีละ Item\nfor (const item of items) {\n  const json = item.json;\n  \n  // Case 1: RD Lookup Failed (ไม่เจอ VAT ID หรือ Error มาก่อนหน้า)\n  if (!json.rd_success) {\n    out.push({\n      json: {\n        ...json,\n        buyer_vat_info_status: false, \n        buyer_address_status: false,  \n        buyer_address_reason: \"RD Lookup Failed / VAT ID Not Found\"\n      },\n      pairedItem: item.pairedItem\n    });\n    continue;\n  }\n\n  // Case 2: RD Lookup สำเร็จ -> เริ่มเทียบที่อยู่\n  const pdfAddr = normalizeThaiAddress(json.address_raw);    // ที่อยู่จาก PDF/Input\n  const rdAddr = normalizeThaiAddress(json.rd_address_raw);  // ที่อยู่จากกรมสรรพากร\n\n  let status = false;\n  let reason = \"Mismatch\";\n\n  if (pdfAddr && rdAddr) {\n    // เช็คไขว้: PDF เป็นส่วนหนึ่งของ RD หรือ RD เป็นส่วนหนึ่งของ PDF\n    if (isSubset(pdfAddr, rdAddr) || isSubset(rdAddr, pdfAddr)) {\n      status = true;\n      reason = \"Match\";\n    }\n  } else {\n    reason = \"Missing Address Data\";\n  }\n\n  out.push({\n    json: {\n      ...json,\n      buyer_vat_info_status: true,\n      buyer_address_status: status,\n      buyer_address_reason: reason,\n      norm_pdf_address: pdfAddr, // ส่งค่าที่ Normalization แล้วออกไปดูด้วย (Optional)\n      norm_rd_address: rdAddr\n    },\n    pairedItem: item.pairedItem\n  });\n}\n\nreturn out;"
+      },
+      "id": "2538953b-adca-425c-b4ed-d22964d05582",
+      "name": "Compare Address (Buyer)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -352,
+        384
+      ],
+      "id": "2486d71b-48a1-4478-9672-e1cb2b9a3639",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -176,
+        16
+      ],
+      "id": "14bc4a38-14a9-4509-9b02-849cd7ab7a9d",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "={{ $json.schema }}",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "invoice_check_summary",
+          "mode": "list",
+          "cachedResultName": "invoice_check_summary"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $json.invoice_number }}",
+            "vendor_vat_id_info_status": "={{ $json.rd_success }}"
+          },
+          "matchingColumns": [
+            "invoice_number"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_id",
+              "displayName": "invoice_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "vendor_vat_id",
+              "displayName": "vendor_vat_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch",
+              "displayName": "vendor_branch",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_status",
+              "displayName": "invoice_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "buyer_vat_info_status",
+              "displayName": "buyer_vat_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_number_status",
+              "displayName": "invoice_number_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date_raw_status",
+              "displayName": "date_raw_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_name_status",
+              "displayName": "vendor_name_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_id_status",
+              "displayName": "vendor_vat_id_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_id_info_status",
+              "displayName": "vendor_vat_id_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vendor_branch_status",
+              "displayName": "vendor_branch_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "net_amount_status",
+              "displayName": "net_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vat_amount_status",
+              "displayName": "vat_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "grand_total_status",
+              "displayName": "grand_total_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_in_pdf",
+              "displayName": "missing_in_pdf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_in_excel",
+              "displayName": "missing_in_excel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "all_ok",
+              "displayName": "all_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ffb3102a-b0fd-40eb-8ccd-1d923a9f50b9",
+      "name": "Update Summary (Vendor)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -160,
+        384
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.rd_success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6d01a711-41ca-41ae-a5ec-9497aa8d4203",
+      "name": "Check RD Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -864,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "={{ $json.schema }}",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "invoice_check_summary",
+          "mode": "list",
+          "cachedResultName": "invoice_check_summary"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $json.invoice_number }}",
+            "buyer_vat_info_status": "={{ $json.buyer_address_status }}"
+          },
+          "matchingColumns": [
+            "invoice_number"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_id",
+              "displayName": "invoice_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "vendor_vat_id",
+              "displayName": "vendor_vat_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch",
+              "displayName": "vendor_branch",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_status",
+              "displayName": "invoice_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "buyer_vat_info_status",
+              "displayName": "buyer_vat_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_number_status",
+              "displayName": "invoice_number_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date_raw_status",
+              "displayName": "date_raw_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_name_status",
+              "displayName": "vendor_name_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_id_status",
+              "displayName": "vendor_vat_id_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_id_info_status",
+              "displayName": "vendor_vat_id_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch_status",
+              "displayName": "vendor_branch_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "net_amount_status",
+              "displayName": "net_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vat_amount_status",
+              "displayName": "vat_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "grand_total_status",
+              "displayName": "grand_total_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_in_pdf",
+              "displayName": "missing_in_pdf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_in_excel",
+              "displayName": "missing_in_excel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "all_ok",
+              "displayName": "all_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f7900185-e1ac-45b4-ba63-f10053877c8f",
+      "name": "Update Summary (Buyer)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "HTTP: RD VAT Lookup",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: RD VAT Lookup": {
+      "main": [
+        [
+          {
+            "node": "XML to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML to JSON": {
+      "main": [
+        [
+          {
+            "node": "Normalize RD Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize RD Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Input",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Input": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch Type",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check RD Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Type": {
+      "main": [
+        [
+          {
+            "node": "Compare Address (Buyer)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Address (Buyer)": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Update Summary (Vendor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Update Summary (Buyer)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check RD Success": {
+      "main": [
+        [
+          {
+            "node": "Upsert VAT Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "58dcb391-5938-49f7-b22f-19a7eeab9173",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
+  },
+  "id": "OZdjRklO3Sz6aGi8",
+  "tags": []
+}
