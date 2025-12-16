@@ -8,10 +8,7 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
-      "position": [
-        -544,
-        480
-      ],
+      "position": [-544, 480],
       "id": "ae074d2f-d9e6-41d5-8f39-68383d115521",
       "name": "Read/Write Files from Disk",
       "alwaysOutputData": false
@@ -22,10 +19,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        112,
-        624
-      ],
+      "position": [112, 624],
       "id": "7cce20ce-1940-4623-8760-11a86c745854",
       "name": "Prepare Batch Data"
     },
@@ -47,9 +41,7 @@
             "total_files": "={{ $json.total_files }}",
             "batch_name": "={{ $json.batch_name }}"
           },
-          "matchingColumns": [
-            "id"
-          ],
+          "matchingColumns": ["id"],
           "schema": [
             {
               "id": "id",
@@ -127,10 +119,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        352,
-        704
-      ],
+      "position": [352, 704],
       "id": "9ac1df32-ae15-4bd3-b6b2-0e4cae02210e",
       "name": "Create Batch Record",
       "credentials": {
@@ -148,10 +137,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [
-        512,
-        640
-      ],
+      "position": [512, 640],
       "id": "edbd9cea-4a1f-448d-9326-826c0ca6ad98",
       "name": "Merge Batch ID"
     },
@@ -163,10 +149,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        96,
-        800
-      ],
+      "position": [96, 800],
       "id": "3c448acc-a535-4605-84ce-01f534109e53",
       "name": "Execute a SQL query",
       "credentials": {
@@ -184,10 +167,7 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [
-        512,
-        928
-      ],
+      "position": [512, 928],
       "id": "96b27056-1b89-4741-aadb-6c1cfc4c1b53",
       "name": "Respond to Webhook"
     },
@@ -199,10 +179,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        320,
-        928
-      ],
+      "position": [320, 928],
       "id": "f9b689a9-e91a-4d8f-aa3a-e9664d6bee86",
       "name": "Merge2"
     },
@@ -232,10 +209,7 @@
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [
-        1040,
-        656
-      ],
+      "position": [1040, 656],
       "name": "Call My Sub-workflow1",
       "id": "e6fc030c-b415-4f1f-910d-b2bcf8bc756e",
       "alwaysOutputData": false
@@ -246,10 +220,7 @@
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [
-        736,
-        640
-      ],
+      "position": [736, 640],
       "id": "040bda1d-b34b-44ff-8248-ab4716019347",
       "name": "Loop Over Items1"
     },
@@ -264,24 +235,18 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [
-        -768,
-        480
-      ],
+      "position": [-768, 480],
       "id": "049d1250-30f8-493b-b8a2-33d92fb1e6f7",
       "name": "Webhook1",
       "webhookId": "ecb7626f-8968-4654-be8f-555b9f7f12f7"
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const bin = item.binary?.data || {};\n\n  const directory = bin.directory || \"\";\n  const fileName  = bin.fileName  || \"\";\n\n  const path = directory\n    ? `${directory}/${fileName}`\n    : fileName;\n\n  const safeName = path\n    .replace(/^\\.+/, '')\n    .replace(/[\\\\/]+/g, '_')\n    || fileName;\n\n  return {\n    json: {\n      fileName: safeName,\n      directory,\n      path,\n    },\n    binary: {\n      ...item.binary,\n      data: {\n        ...bin,\n        fileName: safeName,\n      }\n    }\n  };\n});\n"
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const bin = item.binary?.data; \n\n  const directory = bin?.directory || \"\";\n  const fileName  = bin?.fileName  || \"\";\n\n  return {\n    json: {\n      fileName,\n      directory,\n      // full path รวมชื่อไฟล์ด้วย\n      path: directory\n        ? `${directory}/${fileName}`\n        : fileName\n    },\n    binary: item.binary   \n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        -320,
-        480
-      ],
+      "position": [-320, 480],
       "id": "16100c01-bad6-4aa3-be90-76d8c0679e8f",
       "name": "Extract File Info1"
     },
@@ -291,25 +256,19 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        -112,
-        480
-      ],
+      "position": [-112, 480],
       "id": "b5b1fd6e-29f5-422d-8f52-21836f26ae9b",
       "name": "Hash Schema Name1"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "CREATE SCHEMA IF NOT EXISTS global;\n\nCREATE TABLE IF NOT EXISTS global.vat_companies (\n    id SERIAL PRIMARY KEY,\n\n    vat_id TEXT NOT NULL,\n    branch TEXT NOT NULL,\n\n    company_name TEXT,\n    address      TEXT,\n\n    created_at TIMESTAMP DEFAULT NOW(),\n    updated_at TIMESTAMP DEFAULT NOW(),\n\n    CONSTRAINT vat_company_unique UNIQUE (vat_id, branch)\n);\n\nCREATE TABLE IF NOT EXISTS global.workflow_errors (\n    id SERIAL PRIMARY KEY,\n    timestamp TIMESTAMP,\n    workflow_name TEXT,\n    workflow_id TEXT,\n    execution_id TEXT,\n    execution_url TEXT,\n    last_node TEXT,\n    error_message TEXT,\n    error_stack TEXT\n);\n\nCREATE TABLE IF NOT EXISTS global.workflow_batches (\n    id SERIAL PRIMARY KEY,\n    batch_name TEXT,\n    total_files INT,\n    completed_files INT DEFAULT 0,\n    created_at TIMESTAMP DEFAULT NOW(),\n    updated_at TIMESTAMP DEFAULT NOW(),\n    status TEXT DEFAULT 'pending'\n);",
+        "query": "CREATE SCHEMA IF NOT EXISTS global;\n\nCREATE TABLE IF NOT EXISTS global.vat_companies (\n    id SERIAL PRIMARY KEY,\n\n    vat_id TEXT NOT NULL,\n    branch TEXT NOT NULL,\n\n    company_name TEXT,\n    address      TEXT,\n\n    created_at TIMESTAMP DEFAULT NOW(),\n    updated_at TIMESTAMP DEFAULT NOW(),\n\n    CONSTRAINT vat_company_unique UNIQUE (vat_id, branch)\n);\n\nCREATE TABLE IF NOT EXISTS global.buildmeup_customers (\n    id SERIAL PRIMARY KEY,\n    source_id INT UNIQUE, -- สำหรับเก็บค่าจาก column 'Build'\n    company_name TEXT, -- ชื่อบริษัท\n    tax_id VARCHAR(20), -- เลขทะเบียนนิติบุคคล\n    company_status VARCHAR(50), -- สถานะบริษัท\n    vat_status VARCHAR(50), -- จดVat\n    vat_date DATE, -- วันที่จดVat\n    entity_type VARCHAR(100), -- ประเภทนิติบุคคล\n    business_code_regis VARCHAR(50), -- รหัสธุรกิจ ตอนจดทะเบียน\n    objective_regis TEXT, -- วัตถุประสงค์ ตอนจดทะเบียน\n    business_code_latest VARCHAR(50), -- รหัสธุรกิจ ที่ส่งงบปีล่าสุด\n    objective_latest TEXT, -- วัตถุประสงค์ ที่ส่งงบปีล่าสุด\n    account_start_date DATE -- วันที่เริ่มทำบัญชี\n);\n\nCREATE TABLE IF NOT EXISTS global.workflow_errors (\n    id SERIAL PRIMARY KEY,\n    timestamp TIMESTAMP,\n    workflow_name TEXT,\n    workflow_id TEXT,\n    execution_id TEXT,\n    execution_url TEXT,\n    last_node TEXT,\n    error_message TEXT,\n    error_stack TEXT\n);\n\nCREATE TABLE IF NOT EXISTS global.workflow_batches (\n    id SERIAL PRIMARY KEY,\n    batch_name TEXT,\n    total_files INT,\n    completed_files INT DEFAULT 0,\n    created_at TIMESTAMP DEFAULT NOW(),\n    updated_at TIMESTAMP DEFAULT NOW(),\n    status TEXT DEFAULT 'pending'\n);",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        176,
-        32
-      ],
+      "position": [176, 32],
       "id": "e51a5943-ffab-466f-871e-b17583ab5679",
       "name": "Create Companies Table1",
       "credentials": {
@@ -322,15 +281,12 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- ---------------------------------------------------------\n-- 0) ถ้ามี schema เดิมอยู่ → ลบทิ้งทั้งหมด (รวมตาราง)\n-- ---------------------------------------------------------\nDROP SCHEMA IF EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}} CASCADE;\n\n-- ---------------------------------------------------------\n-- 1) สร้าง schema ใหม่\n-- ---------------------------------------------------------\nCREATE SCHEMA IF NOT EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}};\n\n-- ---------------------------------------------------------\n-- 2) ตาราง invoices: เก็บข้อมูลจริงจาก PDF\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoices (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    doc_title        TEXT,\n\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n\n    name             TEXT UNIQUE,\n    path             TEXT UNIQUE,\n    is_done          BOOLEAN DEFAULT FALSE,\n\n    CONSTRAINT invoices_unique_triplet\n      UNIQUE (invoice_number, vendor_vat_id, vendor_branch),\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n\n-- ---------------------------------------------------------\n-- 3) ตาราง summary: 1-to-1 กับ invoices + unique composite key\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoice_check_summary (\n    id SERIAL PRIMARY KEY,\n\n    invoice_id INT UNIQUE REFERENCES {{\n      $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n    }}.invoices(id) ON DELETE CASCADE,\n\n    invoice_number    TEXT NOT NULL,\n    vendor_vat_id     TEXT NOT NULL,\n    vendor_branch     TEXT NOT NULL,\n\n    invoice_status              BOOLEAN,\n    buyer_vat_info_status       BOOLEAN,\n    invoice_number_status       BOOLEAN,\n    date_raw_status             BOOLEAN,\n    vendor_name_status          BOOLEAN,\n    vendor_vat_id_status        BOOLEAN,\n    vendor_vat_id_info_status   BOOLEAN,\n    vendor_branch_status        BOOLEAN,\n    net_amount_status           BOOLEAN,\n    vat_amount_status           BOOLEAN,\n    grand_total_status          BOOLEAN,\n\n    buyer_address_status        BOOLEAN,\n    buyer_address_reason        TEXT,\n\n    missing_in_pdf      BOOLEAN,\n    missing_in_excel    BOOLEAN,\n    all_ok              BOOLEAN,\n\n    updated_at          TIMESTAMP DEFAULT NOW(),\n\n    CONSTRAINT uq_invoice_check_summary\n        UNIQUE (invoice_number, vendor_vat_id, vendor_branch)\n);\n\n-- ---------------------------------------------------------\n-- 4) ตาราง Excel purchase tax\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.excel_purchase_tax (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    doc_title        TEXT,\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n",
+        "query": "-- ---------------------------------------------------------\n-- 0) ถ้ามี schema เดิมอยู่ → ลบทิ้งทั้งหมด (รวมตาราง)\n-- ---------------------------------------------------------\nDROP SCHEMA IF EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}} CASCADE;\n\n-- ---------------------------------------------------------\n-- 1) สร้าง schema ใหม่\n-- ---------------------------------------------------------\nCREATE SCHEMA IF NOT EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}};\n\n-- ---------------------------------------------------------\n-- 2) ตาราง invoices: เก็บข้อมูลจริงจาก PDF\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoices (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    doc_title        TEXT,\n\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n\n    name             TEXT UNIQUE,\n    path             TEXT UNIQUE,\n    is_done          BOOLEAN DEFAULT FALSE,\n\n    CONSTRAINT invoices_unique_triplet\n      UNIQUE (invoice_number, vendor_vat_id, vendor_branch),\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n\n-- ---------------------------------------------------------\n-- 3) ตาราง summary: 1-to-1 กับ invoices + unique composite key\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoice_check_summary (\n    id SERIAL PRIMARY KEY,\n\n    invoice_id INT UNIQUE REFERENCES {{\n      $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n    }}.invoices(id) ON DELETE CASCADE,\n\n    invoice_number    TEXT NOT NULL,\n    vendor_vat_id     TEXT NOT NULL,\n    vendor_branch     TEXT NOT NULL,\n\n    invoice_status                  BOOLEAN,\n    buyer_vat_info_status           BOOLEAN,\n    invoice_number_status           BOOLEAN,\n    date_raw_status                 BOOLEAN,\n    vendor_name_status              BOOLEAN,\n    vendor_vat_id_status            BOOLEAN,\n    vendor_vat_id_info_status       BOOLEAN,\n    vendor_branch_status            BOOLEAN,\n    net_amount_status               BOOLEAN,\n    vat_amount_status               BOOLEAN,\n    vat_calculation_status          BOOLEAN,\n    grand_total_status              BOOLEAN,\n    grand_total_calculation_status  BOOLEAN,\n\n    missing_in_pdf                  BOOLEAN,\n    missing_in_excel                BOOLEAN,\n    all_ok                          BOOLEAN,\n\n    updated_at                     TIMESTAMP DEFAULT NOW(),\n\n    CONSTRAINT uq_invoice_check_summary\n        UNIQUE (invoice_number, vendor_vat_id, vendor_branch)\n);\n\n-- ---------------------------------------------------------\n-- 4) ตาราง Excel purchase tax\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.excel_purchase_tax (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    ref_doc          TEXT,\n    doc_title        TEXT,\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n    report_company_name TEXT,\n    report_tax_form_id  TEXT,\n    source_id           INTEGER,\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        176,
-        256
-      ],
+      "position": [176, 256],
       "id": "45df4431-89b1-420d-9bfb-080e079ae5ca",
       "name": "Create Schema For Company1",
       "credentials": {
@@ -359,9 +315,7 @@
             "name": "={{ $json.fileName }}",
             "path": "={{ $json.path }}"
           },
-          "matchingColumns": [
-            "id"
-          ],
+          "matchingColumns": ["id"],
           "schema": [
             {
               "id": "id",
@@ -493,10 +447,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        320,
-        464
-      ],
+      "position": [272, 480],
       "id": "511e4cf1-5c4e-4489-a332-4b1aebe3123b",
       "name": "Insert rows in a table1",
       "credentials": {
@@ -506,6 +457,218 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/bmu/Data customer.xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [-544, 704],
+      "id": "2fa2feda-c59f-4b87-8524-c0cfd9414c76",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "35856562-4ec0-4e5f-ac9e-3c9bc5b61a7c",
+      "name": "Spreadsheet File: Read",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [-320, 816]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ฟังก์ชันหลักที่ใช้แปลงวันที่ ทั้ง Excel Serial Date, Unix Timestamp, หรือ ISO String\nfunction normalizeDate(value) {\n    if (!value) return null;\n\n    let serial = value;\n    if (typeof value === 'string') {\n      \n        // แปลง string เป็น number สำหรับการตรวจเช็ค Excel\n        serial = parseFloat(value);\n        if (isNaN(serial)) return null;\n    }\n  \n    // 2. ตรวจสอบ Unix Timestamp (Seconds: >= 10 หลัก)\n\n    if (serial > 1000000000) { \n        let timestampMs = serial;\n        // ถ้าเป็น 10 หลัก (วินาที), ปรับเป็นมิลลิวินาที\n        if (serial < 10000000000) { \n             timestampMs = serial * 1000;\n        }\n        \n        const date = new Date(timestampMs);\n        if (isNaN(date.getTime())) return null;\n\n        // ป้องกัน Timezone offset\n        date.setHours(date.getHours() + 12); \n        return date.toISOString().split('T')[0];\n    }\n    \n    // 3. ตรวจสอบ Excel Serial Date \n    if (serial > 20000 && serial < 100000) {\n        // แปลง Excel Serial -> Date object\n        const date = new Date((serial - 25569) * 86400 * 1000);\n        \n        date.setHours(date.getHours() + 12); \n        \n        if (isNaN(date.getTime())) return null;\n        return date.toISOString().split('T')[0];\n    }\n\n    return null;\n}\n\nconst result = item.json; \nconst getVal = (key) => result[key] === null || result[key] === undefined ? null : result[key];\n\nreturn {\n  json: {\n    source_id: parseInt(getVal('Build')) || null,\n    company_name: getVal('ชื่อบริษัท'),\n    \n    // แปลงเลขทะเบียนเป็น Text และลบขีด/ช่องว่าง\n    tax_id: getVal('เลขทะเบียนนิติบุคคล') ? getVal('เลขทะเบียนนิติบุคคล').toString().replace(/[^0-9]/g, '') : null,\n    \n    company_status: getVal('สถานะบริษัท'),\n    vat_status: getVal('จดVat'),\n    \n    // ใช้ฟังก์ชัน normalizeDate สำหรับคอลัมน์ DATE \n    vat_date: normalizeDate(getVal('วันที่จดVat')), \n    \n    entity_type: getVal('ประเภทนิติบุคคล'),\n    \n    // แปลงรหัสธุรกิจเป็น String \n    business_code_regis: getVal('รหัสธุรกิจ ตอนจดทะเบียน') ? getVal('รหัสธุรกิจ ตอนจดทะเบียน').toString() : null,\n    objective_regis: getVal('วัตถุประสงค์ ตอนจดทะเบียน'),\n    \n    business_code_latest: getVal('รหัสธุรกิจ ที่ส่งงบปีล่าสุด') ? getVal('รหัสธุรกิจ ที่ส่งงบปีล่าสุด').toString() : null,\n    objective_latest: getVal('วัตถุประสงค์ ที่ส่งงบปีล่าสุด'),\n    \n    // ใช้ฟังก์ชัน normalizeDate สำหรับคอลัมน์ DATE ใน Postgres\n    account_start_date: normalizeDate(getVal('วันที่เริ่มทำบัญชี'))\n  }\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-96, 960],
+      "id": "04c952f3-e298-493f-a8d7-4702c3b31cb8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "global",
+          "mode": "list",
+          "cachedResultName": "global"
+        },
+        "table": {
+          "__rl": true,
+          "value": "buildmeup_customers",
+          "mode": "list",
+          "cachedResultName": "buildmeup_customers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_id": "={{ $json.source_id }}",
+            "company_name": "={{ $json.company_name }}",
+            "tax_id": "={{ $json.tax_id }}",
+            "company_status": "={{ $json.company_status }}",
+            "vat_status": "={{ $json.vat_status }}",
+            "vat_date": "={{ $json.vat_date }}",
+            "entity_type": "={{ $json.entity_type }}",
+            "business_code_regis": "={{ $json.business_code_regis }}",
+            "objective_regis": "={{ $json.business_code_latest }}",
+            "objective_latest": "={{ $json.objective_latest }}",
+            "business_code_latest": "={{ $json.business_code_latest }}",
+            "account_start_date": "={{ $json.account_start_date }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "source_id",
+              "displayName": "source_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tax_id",
+              "displayName": "tax_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company_status",
+              "displayName": "company_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vat_status",
+              "displayName": "vat_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vat_date",
+              "displayName": "vat_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "registration_date_thai",
+              "displayName": "registration_date_thai",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "entity_type",
+              "displayName": "entity_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "business_code_regis",
+              "displayName": "business_code_regis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "objective_regis",
+              "displayName": "objective_regis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "business_code_latest",
+              "displayName": "business_code_latest",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "objective_latest",
+              "displayName": "objective_latest",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "account_start_date",
+              "displayName": "account_start_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "skipOnConflict": true
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [96, 1072],
+      "id": "98159a49-6cc1-4a59-a962-7a04e649f0f3",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "connections": {
@@ -610,6 +773,11 @@
             "node": "Merge2",
             "type": "main",
             "index": 1
+          },
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -660,13 +828,49 @@
           }
         ]
       ]
+    },
+    "Create Companies Table1": {
+      "main": [[]]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Spreadsheet File: Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spreadsheet File: Read": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "54c482ef-8a7e-4221-8ce7-199a06d836f5",
+  "versionId": "7db81bbe-f07b-44fe-9775-edd72f9edbdb",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
