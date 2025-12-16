@@ -17,10 +17,9 @@ scrape_configs:
           __path__: /var/lib/docker/containers/*/*-json.log
 
     pipeline_stages:
-
       # Extract only container ID from log path
       - regex:
-          expression: ".*/(?P<container_id>[a-f0-9]{64})/"
+          expression: '.*/(?P<container_id>[a-f0-9]{64})/'
 
       # Attach docker metadata (needs docker.sock)
       - docker: {}

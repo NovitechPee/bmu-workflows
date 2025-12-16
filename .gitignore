@@ -34,3 +34,7 @@ prometheus/data/
 
 # Logs
 *.log
+
+# Node.js
+node_modules/
+account_ui/dist/

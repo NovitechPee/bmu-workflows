@@ -57,5 +57,5 @@ ruler:
   storage:
     local:
       directory: /loki/rules
-  alertmanager_url: ""
+  alertmanager_url: ''
   enable_api: true
