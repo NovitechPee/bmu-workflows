@@ -19,7 +19,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [112, 624],
+      "position": [192, 608],
       "id": "7cce20ce-1940-4623-8760-11a86c745854",
       "name": "Prepare Batch Data"
     },
@@ -119,7 +119,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [352, 704],
+      "position": [368, 608],
       "id": "9ac1df32-ae15-4bd3-b6b2-0e4cae02210e",
       "name": "Create Batch Record",
       "credentials": {
@@ -137,7 +137,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [512, 640],
+      "position": [560, 496],
       "id": "edbd9cea-4a1f-448d-9326-826c0ca6ad98",
       "name": "Merge Batch ID"
     },
@@ -149,7 +149,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [96, 800],
+      "position": [192, 832],
       "id": "3c448acc-a535-4605-84ce-01f534109e53",
       "name": "Execute a SQL query",
       "credentials": {
@@ -167,7 +167,7 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [512, 928],
+      "position": [576, 832],
       "id": "96b27056-1b89-4741-aadb-6c1cfc4c1b53",
       "name": "Respond to Webhook"
     },
@@ -179,7 +179,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [320, 928],
+      "position": [384, 832],
       "id": "f9b689a9-e91a-4d8f-aa3a-e9664d6bee86",
       "name": "Merge2"
     },
@@ -209,7 +209,7 @@
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [1040, 656],
+      "position": [1024, 512],
       "name": "Call My Sub-workflow1",
       "id": "e6fc030c-b415-4f1f-910d-b2bcf8bc756e",
       "alwaysOutputData": false
@@ -220,7 +220,7 @@
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [736, 640],
+      "position": [768, 496],
       "id": "040bda1d-b34b-44ff-8248-ab4716019347",
       "name": "Loop Over Items1"
     },
@@ -268,7 +268,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [176, 32],
+      "position": [192, -176],
       "id": "e51a5943-ffab-466f-871e-b17583ab5679",
       "name": "Create Companies Table1",
       "credentials": {
@@ -286,7 +286,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [176, 256],
+      "position": [192, 48],
       "id": "45df4431-89b1-420d-9bfb-080e079ae5ca",
       "name": "Create Schema For Company1",
       "credentials": {
@@ -447,7 +447,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [272, 480],
+      "position": [192, 272],
       "id": "511e4cf1-5c4e-4489-a332-4b1aebe3123b",
       "name": "Insert rows in a table1",
       "credentials": {
@@ -465,7 +465,7 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
-      "position": [-544, 704],
+      "position": [-512, 1072],
       "id": "2fa2feda-c59f-4b87-8524-c0cfd9414c76",
       "name": "Read/Write Files from Disk1"
     },
@@ -477,16 +477,16 @@
       "name": "Spreadsheet File: Read",
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [-320, 816]
+      "position": [-336, 1072]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// ฟังก์ชันหลักที่ใช้แปลงวันที่ ทั้ง Excel Serial Date, Unix Timestamp, หรือ ISO String\nfunction normalizeDate(value) {\n    if (!value) return null;\n\n    let serial = value;\n    if (typeof value === 'string') {\n      \n        // แปลง string เป็น number สำหรับการตรวจเช็ค Excel\n        serial = parseFloat(value);\n        if (isNaN(serial)) return null;\n    }\n  \n    // 2. ตรวจสอบ Unix Timestamp (Seconds: >= 10 หลัก)\n\n    if (serial > 1000000000) { \n        let timestampMs = serial;\n        // ถ้าเป็น 10 หลัก (วินาที), ปรับเป็นมิลลิวินาที\n        if (serial < 10000000000) { \n             timestampMs = serial * 1000;\n        }\n        \n        const date = new Date(timestampMs);\n        if (isNaN(date.getTime())) return null;\n\n        // ป้องกัน Timezone offset\n        date.setHours(date.getHours() + 12); \n        return date.toISOString().split('T')[0];\n    }\n    \n    // 3. ตรวจสอบ Excel Serial Date \n    if (serial > 20000 && serial < 100000) {\n        // แปลง Excel Serial -> Date object\n        const date = new Date((serial - 25569) * 86400 * 1000);\n        \n        date.setHours(date.getHours() + 12); \n        \n        if (isNaN(date.getTime())) return null;\n        return date.toISOString().split('T')[0];\n    }\n\n    return null;\n}\n\nconst result = item.json; \nconst getVal = (key) => result[key] === null || result[key] === undefined ? null : result[key];\n\nreturn {\n  json: {\n    source_id: parseInt(getVal('Build')) || null,\n    company_name: getVal('ชื่อบริษัท'),\n    \n    // แปลงเลขทะเบียนเป็น Text และลบขีด/ช่องว่าง\n    tax_id: getVal('เลขทะเบียนนิติบุคคล') ? getVal('เลขทะเบียนนิติบุคคล').toString().replace(/[^0-9]/g, '') : null,\n    \n    company_status: getVal('สถานะบริษัท'),\n    vat_status: getVal('จดVat'),\n    \n    // ใช้ฟังก์ชัน normalizeDate สำหรับคอลัมน์ DATE \n    vat_date: normalizeDate(getVal('วันที่จดVat')), \n    \n    entity_type: getVal('ประเภทนิติบุคคล'),\n    \n    // แปลงรหัสธุรกิจเป็น String \n    business_code_regis: getVal('รหัสธุรกิจ ตอนจดทะเบียน') ? getVal('รหัสธุรกิจ ตอนจดทะเบียน').toString() : null,\n    objective_regis: getVal('วัตถุประสงค์ ตอนจดทะเบียน'),\n    \n    business_code_latest: getVal('รหัสธุรกิจ ที่ส่งงบปีล่าสุด') ? getVal('รหัสธุรกิจ ที่ส่งงบปีล่าสุด').toString() : null,\n    objective_latest: getVal('วัตถุประสงค์ ที่ส่งงบปีล่าสุด'),\n    \n    // ใช้ฟังก์ชัน normalizeDate สำหรับคอลัมน์ DATE ใน Postgres\n    account_start_date: normalizeDate(getVal('วันที่เริ่มทำบัญชี'))\n  }\n}"
+        "jsCode": "function normalizeDate(value) {\n  if (!value) return null;\n  \n  const num = parseFloat(value);\n  if (isNaN(num)) return null;\n  \n  let date;\n  \n  // Excel Serial Date (ช่วง 20000-100000)\n  if (num > 20000 && num < 100000) {\n    date = new Date((num - 25569) * 86400 * 1000);\n  }\n  // Unix Timestamp\n  else if (num > 1000000000) {\n    const ms = num < 10000000000 ? num * 1000 : num;\n    date = new Date(ms);\n  }\n  else {\n    return null;\n  }\n  \n  if (isNaN(date.getTime())) return null;\n  \n  // แก้ timezone offset\n  date.setHours(date.getHours() + 12);\n  return date.toISOString().split('T')[0];\n}\n\nconst d = item.json;\nconst get = (k) => d[k] ?? null;\n\nreturn {\n  json: {\n    source_id: parseInt(get('Build')) || null,\n    company_name: get('ชื่อบริษัท'),\n    tax_id: get('เลขทะเบียนนิติบุคคล')?.toString().replace(/[^0-9]/g, '') || null,\n    company_status: get('สถานะบริษัท'),\n    vat_status: get('จดVat'),\n    vat_date: normalizeDate(get('วันที่จดVat')),\n    entity_type: get('ประเภทนิติบุคคล'),\n    business_code_regis: get('รหัสธุรกิจ ตอนจดทะเบียน')?.toString() || null,\n    objective_regis: get('วัตถุประสงค์ ตอนจดทะเบียน'),\n    business_code_latest: get('รหัสธุรกิจ ที่ส่งงบปีล่าสุด')?.toString() || null,\n    objective_latest: get('วัตถุประสงค์ ที่ส่งงบปีล่าสุด'),\n    account_start_date: normalizeDate(get('วันที่เริ่มทำบัญชี'))\n  }\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-96, 960],
+      "position": [-144, 1072],
       "id": "04c952f3-e298-493f-a8d7-4702c3b31cb8",
       "name": "Code in JavaScript"
     },
@@ -660,7 +660,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [96, 1072],
+      "position": [48, 1072],
       "id": "98159a49-6cc1-4a59-a962-7a04e649f0f3",
       "name": "Insert rows in a table",
       "credentials": {
@@ -868,9 +868,10 @@
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": true
   },
-  "versionId": "7db81bbe-f07b-44fe-9775-edd72f9edbdb",
+  "versionId": "cfda6f5b-fe59-408a-8423-73308bf43a65",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
