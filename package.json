@@ -1,0 +1,21 @@
+{
+  "name": "docker",
+  "version": "1.0.0",
+  "description": "Docker Compose stack for n8n with PostgreSQL, Grafana, Prometheus, pgAdmin, Loki/Promtail, and an optional account UI. Includes a helper script to import bundled workflows.",
+  "main": "index.js",
+  "scripts": {
+    "format": "prettier --write .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@ssh.dev.azure.com:v3/novitech-ai/BMU/BMU"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "prettier": "^3.7.4"
+  }
+}

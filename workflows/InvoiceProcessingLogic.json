@@ -9,44 +9,7 @@
       "typeVersion": 1.1,
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "position": [
-        -112,
-        -544
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "eeac368e-1225-484e-996f-daf45cddc6d5",
-              "leftValue": "={{ $json.has_invoice }}",
-              "rightValue": "true",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        624,
-        -624
-      ],
-      "id": "e53699f3-be27-4b20-b964-c4d5c47510a9",
-      "name": "Check Invoice Status"
+      "position": [-112, -544]
     },
     {
       "parameters": {
@@ -71,11 +34,12 @@
             "vendor_vat_id": "={{ $json.vendor_vat_id }}",
             "vendor_branch": "={{ $json.vendor_branch }}",
             "name": "={{ $json.fileName }}",
-            "doc_title": "={{ $json.doc_title }}"
+            "doc_title": "={{ $json.doc_title }}",
+            "grand_total": "={{ $json.grand_total }}",
+            "vat_amount": "={{ $json.vat_amount }}",
+            "net_amount": "={{ $json.net_amount }}"
           },
-          "matchingColumns": [
-            "name"
-          ],
+          "matchingColumns": ["name"],
           "schema": [
             {
               "id": "id",
@@ -105,6 +69,16 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "doc_title",
+              "displayName": "doc_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
             },
             {
               "id": "vendor_name",
@@ -141,7 +115,7 @@
               "display": true,
               "type": "number",
               "canBeUsedToMatch": true,
-              "removed": true
+              "removed": false
             },
             {
               "id": "vat_amount",
@@ -151,7 +125,7 @@
               "display": true,
               "type": "number",
               "canBeUsedToMatch": true,
-              "removed": true
+              "removed": false
             },
             {
               "id": "grand_total",
@@ -161,7 +135,7 @@
               "display": true,
               "type": "number",
               "canBeUsedToMatch": true,
-              "removed": true
+              "removed": false
             },
             {
               "id": "name",
@@ -184,6 +158,16 @@
               "removed": true
             },
             {
+              "id": "is_done",
+              "displayName": "is_done",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
               "id": "created_at",
               "displayName": "created_at",
               "required": false,
@@ -191,16 +175,6 @@
               "display": true,
               "type": "dateTime",
               "canBeUsedToMatch": true
-            },
-            {
-              "id": "doc_title",
-              "displayName": "doc_title",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
             }
           ],
           "attemptToConvertTypes": false,
@@ -210,10 +184,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        624,
-        -880
-      ],
+      "position": [384, -800],
       "id": "cae95739-da2b-41a9-8928-d851093b1973",
       "name": "Update Invoices Table",
       "credentials": {
@@ -223,229 +194,6 @@
         }
       },
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoice_check_summary",
-          "mode": "list",
-          "cachedResultName": "invoice_check_summary"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "invoice_status": "={{ $json.has_invoice }}",
-            "invoice_number": "={{ $json.invoice_number }}"
-          },
-          "matchingColumns": [
-            "invoice_number"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_id",
-              "displayName": "invoice_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_status",
-              "displayName": "invoice_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "buyer_vat_info_status",
-              "displayName": "buyer_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number_status",
-              "displayName": "invoice_number_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw_status",
-              "displayName": "date_raw_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name_status",
-              "displayName": "vendor_name_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id_status",
-              "displayName": "vendor_vat_id_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_info_status",
-              "displayName": "vendor_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch_status",
-              "displayName": "vendor_branch_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount_status",
-              "displayName": "net_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vat_amount_status",
-              "displayName": "vat_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "grand_total_status",
-              "displayName": "grand_total_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "all_ok",
-              "displayName": "all_ok",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "updated_at",
-              "displayName": "updated_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        832,
-        -736
-      ],
-      "id": "bfc8280a-1cea-4664-8e1e-6e3c6b214329",
-      "name": "Update Summary Table",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
     },
     {
       "parameters": {
@@ -465,11 +213,12 @@
           "value": {
             "invoice_number": "={{ $json.invoice_number }}",
             "vendor_vat_id": "={{ $json.vendor_vat_id }}",
-            "vendor_branch": "={{ $json.vendor_branch }}"
+            "vendor_branch": "={{ $json.vendor_branch }}",
+            "vat_calculation_status": "={{ $json.vat_calculate_status }}",
+            "grand_total_calculation_status": "={{ $json.grand_total_calculate_status }}",
+            "invoice_status": "={{ $json.has_invoice }}"
           },
-          "matchingColumns": [
-            "id"
-          ],
+          "matchingColumns": ["id"],
           "schema": [
             {
               "id": "id",
@@ -529,7 +278,7 @@
               "display": true,
               "type": "boolean",
               "canBeUsedToMatch": true,
-              "removed": true
+              "removed": false
             },
             {
               "id": "buyer_vat_info_status",
@@ -622,12 +371,52 @@
               "removed": true
             },
             {
+              "id": "vat_calculation_status",
+              "displayName": "vat_calculation_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
               "id": "grand_total_status",
               "displayName": "grand_total_status",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "grand_total_calculation_status",
+              "displayName": "grand_total_calculation_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "buyer_address_status",
+              "displayName": "buyer_address_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "buyer_address_reason",
+              "displayName": "buyer_address_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
               "canBeUsedToMatch": true,
               "removed": true
             },
@@ -681,10 +470,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        624,
-        -1088
-      ],
+      "position": [384, -1008],
       "id": "ba0615ac-3a52-4c03-87d5-4c7eeec4595d",
       "name": "Insert Summary Record",
       "credentials": {
@@ -694,366 +480,6 @@
         }
       },
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "eeac368e-1225-484e-996f-daf45cddc6d5",
-              "leftValue": "={{ $json.amount_ok }}",
-              "rightValue": "true",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        624,
-        -1280
-      ],
-      "id": "2d048700-09e0-4b84-87c0-1767f219c253",
-      "name": "Check Amount OK"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoices",
-          "mode": "list",
-          "cachedResultName": "invoices"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "net_amount": "={{ $json.net_amount }}",
-            "vat_amount": "={{ $json.vat_amount }}",
-            "grand_total": "={{ $json.grand_total }}",
-            "name": "={{ $json.fileName }}"
-          },
-          "matchingColumns": [
-            "name"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw",
-              "displayName": "date_raw",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name",
-              "displayName": "vendor_name",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount",
-              "displayName": "net_amount",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "vat_amount",
-              "displayName": "vat_amount",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "grand_total",
-              "displayName": "grand_total",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "name",
-              "displayName": "name",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "path",
-              "displayName": "path",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "created_at",
-              "displayName": "created_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        880,
-        -1392
-      ],
-      "id": "51eaf557-9cb8-4482-ab39-825710e91b90",
-      "name": "Update rows in a table3",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoices",
-          "mode": "list",
-          "cachedResultName": "invoices"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "net_amount": "={{ $json.net_amount_fixed }}",
-            "vat_amount": "={{ $json.vat_amount_fixed }}",
-            "grand_total": "={{ $json.grand_total_fixed }}",
-            "name": "={{ $json.fileName }}"
-          },
-          "matchingColumns": [
-            "name"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw",
-              "displayName": "date_raw",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name",
-              "displayName": "vendor_name",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount",
-              "displayName": "net_amount",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "vat_amount",
-              "displayName": "vat_amount",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "grand_total",
-              "displayName": "grand_total",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "name",
-              "displayName": "name",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "path",
-              "displayName": "path",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "created_at",
-              "displayName": "created_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        880,
-        -1216
-      ],
-      "id": "c0a13831-f012-4963-99b7-35b03f590d3c",
-      "name": "Update rows in a table4",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
     },
     {
       "parameters": {
@@ -1082,27 +508,21 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [
-        848,
-        -256
-      ],
+      "position": [608, -560],
       "id": "7e912726-42fa-4a4a-ba2b-fb0a4c58a211",
       "name": "Check Vendor VAT Found"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT vat_id, company_name, branch, address\nFROM vat_companies\nWHERE vat_id = $1\n  AND branch = $2\nLIMIT 1;\n",
+        "query": "SELECT vat_id, company_name, branch, address\nFROM global.vat_companies\nWHERE vat_id = $1\n  AND branch = $2\nLIMIT 1;\n",
         "options": {
           "queryReplacement": "={{ $json.vendor_vat_id }}, {{ $json.vendor_branch }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        624,
-        -256
-      ],
+      "position": [384, -560],
       "id": "72001ceb-b58e-4c11-82c5-ac246d054441",
       "name": "Check Vendor in DB",
       "alwaysOutputData": true,
@@ -1138,256 +558,9 @@
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [
-        1264,
-        -384
-      ],
+      "position": [1024, -688],
       "id": "5f4cb9e1-f1f0-4137-ac6b-9cac99622858",
       "name": "Call RD VAT Lookup (Vendor)"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoice_check_summary",
-          "mode": "list",
-          "cachedResultName": "invoice_check_summary"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "invoice_number": "={{ $json.invoice_number }}",
-            "vendor_vat_id_info_status": "={{ true }}"
-          },
-          "matchingColumns": [
-            "invoice_number"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_id",
-              "displayName": "invoice_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_status",
-              "displayName": "invoice_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "buyer_vat_info_status",
-              "displayName": "buyer_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number_status",
-              "displayName": "invoice_number_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw_status",
-              "displayName": "date_raw_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name_status",
-              "displayName": "vendor_name_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id_status",
-              "displayName": "vendor_vat_id_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch_status",
-              "displayName": "vendor_branch_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount_status",
-              "displayName": "net_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vat_amount_status",
-              "displayName": "vat_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "grand_total_status",
-              "displayName": "grand_total_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "missing_in_pdf",
-              "displayName": "missing_in_pdf",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "missing_in_excel",
-              "displayName": "missing_in_excel",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "all_ok",
-              "displayName": "all_ok",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "updated_at",
-              "displayName": "updated_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "vendor_vat_id_info_status",
-              "displayName": "vendor_vat_id_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": false
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        1264,
-        -176
-      ],
-      "id": "e31c284f-1f1e-42a2-a58b-854479489efc",
-      "name": "Update rows in a table5",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
     },
     {
       "parameters": {
@@ -1416,253 +589,24 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [
-        848,
-        80
-      ],
+      "position": [608, -224],
       "id": "9f34c2ae-d908-4bbb-b082-da25e808d9cc",
       "name": "Check Buyer VAT Found"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT vat_id, company_name, branch, address\nFROM vat_companies\nWHERE vat_id = $1\n  AND branch = $2\nLIMIT 1;\n",
+        "query": "SELECT vat_id, company_name, branch, address\nFROM global.vat_companies\nWHERE vat_id = $1\n  AND branch = $2\nLIMIT 1;\n",
         "options": {
           "queryReplacement": "={{ $json.buyer_vat_id }}, {{ $json.buyer_branch }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        640,
-        80
-      ],
+      "position": [432, -224],
       "id": "90e1680f-230b-42db-b983-d48297289fea",
       "name": "Check Buyer in DB",
       "alwaysOutputData": true,
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoice_check_summary",
-          "mode": "list",
-          "cachedResultName": "invoice_check_summary"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "buyer_vat_info_status": "={{ true }}",
-            "invoice_number": "={{ $json.invoice_number }}"
-          },
-          "matchingColumns": [
-            "invoice_number"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_id",
-              "displayName": "invoice_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_status",
-              "displayName": "invoice_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "buyer_vat_info_status",
-              "displayName": "buyer_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "invoice_number_status",
-              "displayName": "invoice_number_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw_status",
-              "displayName": "date_raw_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name_status",
-              "displayName": "vendor_name_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id_status",
-              "displayName": "vendor_vat_id_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_info_status",
-              "displayName": "vendor_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch_status",
-              "displayName": "vendor_branch_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount_status",
-              "displayName": "net_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vat_amount_status",
-              "displayName": "vat_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "grand_total_status",
-              "displayName": "grand_total_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "all_ok",
-              "displayName": "all_ok",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "updated_at",
-              "displayName": "updated_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        2272,
-        176
-      ],
-      "id": "a2509c82-44b9-450a-bcd0-6fb2b16bf219",
-      "name": "Update rows in a table6",
       "credentials": {
         "postgres": {
           "id": "U97z4MVW6z8NDJpd",
@@ -1700,10 +644,7 @@
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [
-        1280,
-        32
-      ],
+      "position": [1040, -272],
       "id": "b712f79f-da97-4745-ac1b-64dae867241d",
       "name": "Call RD VAT Lookup (Buyer)"
     },
@@ -1715,10 +656,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        1072,
-        -176
-      ],
+      "position": [832, -480],
       "id": "22bcbbf3-2a3a-4f3c-b120-79a7f1669bca",
       "name": "Merge1"
     },
@@ -1730,10 +668,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        1072,
-        240
-      ],
+      "position": [832, -64],
       "id": "d4987ab3-8a39-4fe1-833d-dc54cd617f3e",
       "name": "Merge2"
     },
@@ -1745,10 +680,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        1072,
-        -384
-      ],
+      "position": [832, -688],
       "id": "7c96b831-7788-4a95-85df-fc85a0cbdebf",
       "name": "Merge3"
     },
@@ -1760,539 +692,9 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        1072,
-        32
-      ],
+      "position": [832, -272],
       "id": "42c6096d-2c65-4173-b405-e8499a65f3f9",
       "name": "Merge4"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoice_check_summary",
-          "mode": "list",
-          "cachedResultName": "invoice_check_summary"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "invoice_status": "={{ $json.has_invoice }}",
-            "invoice_number": "={{ $json.invoice_number }}"
-          },
-          "matchingColumns": [
-            "invoice_number"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_id",
-              "displayName": "invoice_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_status",
-              "displayName": "invoice_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "buyer_vat_info_status",
-              "displayName": "buyer_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number_status",
-              "displayName": "invoice_number_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw_status",
-              "displayName": "date_raw_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name_status",
-              "displayName": "vendor_name_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id_status",
-              "displayName": "vendor_vat_id_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_info_status",
-              "displayName": "vendor_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch_status",
-              "displayName": "vendor_branch_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount_status",
-              "displayName": "net_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vat_amount_status",
-              "displayName": "vat_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "grand_total_status",
-              "displayName": "grand_total_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "all_ok",
-              "displayName": "all_ok",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "updated_at",
-              "displayName": "updated_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        832,
-        -528
-      ],
-      "id": "3ef91809-d114-4cda-816e-72e4ea957682",
-      "name": "Update rows in a table2",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT\n    vat_id,\n    company_name,\n    branch,\n    address\nFROM PUBLIC.vat_companies\nWHERE vat_id = $1\n  AND branch = $2\nLIMIT 1;\n",
-        "options": {
-          "queryReplacement": "={{ $json.buyer_vat_id }},{{ $json.buyer_branch }}"
-        }
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        1344,
-        528
-      ],
-      "id": "6b11a797-fb4b-451b-a5d9-d7a8bb4175f1",
-      "name": "Execute a SQL query",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1584,
-        464
-      ],
-      "id": "8fc2dfca-b05a-419d-9c8e-50ad17b78e3d",
-      "name": "Merge5"
-    },
-    {
-      "parameters": {
-        "jsCode": "// ===== Helpers =====\n\n// แปลงเลขไทย → อารบิก\nconst THAI_DIGITS = \"๐๑๒๓๔๕๖๗๘๙\";\nfunction toWesternDigits(s) {\n  return String(s ?? \"\").replace(/[๐-๙]/g, d => String(THAI_DIGITS.indexOf(d)));\n}\n\n// ล้างช่องว่างแปลก ๆ และยุบรวมเหลือ space เดียว\nfunction cleanSpaces(s) {\n  return String(s ?? \"\")\n    .replace(/[\\u00A0\\u1680\\u2000-\\u200D\\u202F\\u205F\\u3000\\uFEFF]/g, \" \")\n    .replace(/[\\t\\r\\n]+/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\n// ฟังก์ชันตรวจสอบว่า \"ทุกคำ\" ใน sourceString ปรากฏอยู่ใน targetString หรือไม่\nfunction isSubset(sourceString, targetString) {\n  if (!sourceString || !targetString) return false;\n\n  // แยกคำใน Source\n  const sourceWords = sourceString.split(\" \").filter(w => w.trim().length > 0);\n  \n  // ทำ Target ให้ติดกันหมด (เพื่อค้นหาได้ง่ายแม้ Target จะพิมพ์ติดกัน)\n  const targetCombined = targetString.replace(/\\s+/g, \"\");\n\n  // ตรวจสอบ\n  return sourceWords.every(word => targetCombined.includes(word));\n}\n\n// -----------------------------------------------------------\n\n// Normalize ชื่อบริษัท: ลบคำนำหน้า/ต่อท้ายทางกฎหมาย แต่ \"เก็บช่องว่างระหว่างคำไว้\"\nfunction normalizeCompanyName(name) {\n  if (!name) return null;\n  let s = toWesternDigits(String(name));\n  s = cleanSpaces(s);\n\n  // ลบคำเหล่านี้ออก (รวมถึงตัวย่อต่างๆ)\n  // เพิ่มคำว่า \"มหาชน\", \"หจก\", \"ห้างหุ้นส่วนจำกัด\" เพื่อความครอบคลุม\n  s = s.replace(/(บริษัท|จำกัด|มหาชน|หจก\\.|หจก|ห้างหุ้นส่วนจำกัด|บจก\\.|บจก|บจ\\.|บมจ\\.|บมจ)/g, \"\");\n  \n  // ลบจุด (.) และเครื่องหมายอื่นๆ ที่อาจกวนการค้นหา\n  s = s.replace(/[.,\\-]/g, \" \");\n\n  return cleanSpaces(s);\n}\n\n// Normalize ที่อยู่: แปลงคำย่อ แต่ \"เก็บช่องว่างระหว่างคำไว้\"\nfunction normalizeThaiAddress(raw) {\n  if (!raw) return null;\n  let s = toWesternDigits(String(raw));\n  s = cleanSpaces(s);\n\n  // ลบคำนำหน้าเลขที่ที่ไม่อยากให้มีผล\n  s = s.replace(/^(บ้านเลขที่|เลขที่)\\s*\\.?\\s*/g, \"\");\n\n  // ตัวย่อ → คำเต็ม\n  s = s.replace(/ม\\.\\s*(\\d+)/g, \"หมู่ $1\");\n  s = s.replace(/หมู่ที่\\s*(\\d+)/g, \"หมู่ $1\");\n  s = s.replace(/ต\\.\\s*/g, \"ตำบล \");\n  s = s.replace(/อ\\.\\s*/g, \"อำเภอ \");\n  s = s.replace(/จ\\.\\s*/g, \"จังหวัด \");\n  s = s.replace(/ถ\\.\\s*/g, \"ถนน \");\n\n  // ลบ ., -\n  s = s.replace(/[.,\\-]/g, \" \");\n  \n  // *** สำคัญ: ไม่ใช้ .replace(/\\s+/g, \"\") เพื่อให้แยกคำได้ ***\n  return cleanSpaces(s);\n}\n\n// ===== Main =====\n\n// ตรวจสอบความปลอดภัยของข้อมูล input\nif (items.length < 2) {\n    return [{ json: { error: \"Expecting at least 2 items (PDF and DB)\" } }];\n}\n\nconst pdf = items[0].json; // ข้อมูลจาก PDF\nconst db  = items[1].json; // ข้อมูลจาก DB/API\n\n// 1) Normalize Name\nconst name_pdf = normalizeCompanyName(pdf.buyer_name);\nconst name_db  = normalizeCompanyName(db.company_name);\n\n// Logic ชื่อ: เช็ค 2 ทาง (PDF อยู่ใน DB หรือ DB อยู่ใน PDF)\nlet company_name_status = false;\nif (name_pdf && name_db) {\n    company_name_status = isSubset(name_pdf, name_db) || isSubset(name_db, name_pdf);\n}\n\n// 2) Normalize Address\nconst addr_pdf = normalizeThaiAddress(pdf.buyer_address_raw);\nconst addr_db  = normalizeThaiAddress(db.address);\n\n// Logic ที่อยู่: เช็ค 2 ทาง\nlet address_status = false;\nif (addr_pdf && addr_db) {\n    address_status = isSubset(addr_pdf, addr_db) || isSubset(addr_db, addr_pdf);\n}\n\n// ---- Output ----\n\nreturn [\n  {\n    json: {\n      ...pdf,\n      // ข้อมูลจาก DB เพื่อดูเปรียบเทียบ\n      db_company_name: db.company_name,\n      db_address: db.address,\n\n      // ค่าที่ Normalize แล้ว (เอาไว้ Debug ดูว่าตัดคำถูกไหม)\n      norm_name_pdf: name_pdf,\n      norm_name_db: name_db,\n      norm_addr_pdf: addr_pdf,\n      norm_addr_db: addr_db,\n\n      // ผลลัพธ์ True/False\n      company_name_status,\n      address_status\n    }\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1808,
-        464
-      ],
-      "id": "4e1bcff3-b180-4cbf-9dfa-5ff3c15d0b5d",
-      "name": "Compare PDF vs DB"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "2b8bdab8-6959-4a9f-967d-b2c70c3809d6",
-              "leftValue": "={{ $json.address_status }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2000,
-        464
-      ],
-      "id": "e53ed4d9-fc5f-45a3-a193-2579508676b0",
-      "name": "Check Address Match"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "={{ $json.schema }}",
-          "mode": "name"
-        },
-        "table": {
-          "__rl": true,
-          "value": "invoice_check_summary",
-          "mode": "list",
-          "cachedResultName": "invoice_check_summary"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "buyer_vat_info_status": "={{ false }}",
-            "invoice_number": "={{ $json.invoice_number }}"
-          },
-          "matchingColumns": [
-            "invoice_number"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_id",
-              "displayName": "invoice_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_number",
-              "displayName": "invoice_number",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "vendor_vat_id",
-              "displayName": "vendor_vat_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch",
-              "displayName": "vendor_branch",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "invoice_status",
-              "displayName": "invoice_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "buyer_vat_info_status",
-              "displayName": "buyer_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "invoice_number_status",
-              "displayName": "invoice_number_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "date_raw_status",
-              "displayName": "date_raw_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_name_status",
-              "displayName": "vendor_name_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_id_status",
-              "displayName": "vendor_vat_id_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_vat_info_status",
-              "displayName": "vendor_vat_info_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vendor_branch_status",
-              "displayName": "vendor_branch_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "net_amount_status",
-              "displayName": "net_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "vat_amount_status",
-              "displayName": "vat_amount_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "grand_total_status",
-              "displayName": "grand_total_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "all_ok",
-              "displayName": "all_ok",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "boolean",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "updated_at",
-              "displayName": "updated_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        2272,
-        560
-      ],
-      "id": "dc7f4875-b031-4e38-88bc-160fc36ae2d6",
-      "name": "Update rows in a table7",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
     },
     {
       "parameters": {
@@ -2314,9 +716,7 @@
             "name": "={{ $json.fileName }}",
             "is_done": "={{ true }}"
           },
-          "matchingColumns": [
-            "name"
-          ],
+          "matchingColumns": ["name"],
           "schema": [
             {
               "id": "id",
@@ -2465,12 +865,569 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        544,
-        256
-      ],
+      "position": [400, 0],
       "id": "674374cd-9e12-49bb-a109-f8b651f33551",
       "name": "Update rows in a table8",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "={{ $json.schema }}",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "invoice_check_summary",
+          "mode": "list",
+          "cachedResultName": "invoice_check_summary"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $json.invoice_number }}",
+            "vendor_vat_id_info_status": "={{ true }}"
+          },
+          "matchingColumns": ["invoice_number"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_id",
+              "displayName": "invoice_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "vendor_vat_id",
+              "displayName": "vendor_vat_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch",
+              "displayName": "vendor_branch",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_status",
+              "displayName": "invoice_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "buyer_vat_info_status",
+              "displayName": "buyer_vat_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_number_status",
+              "displayName": "invoice_number_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date_raw_status",
+              "displayName": "date_raw_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_name_status",
+              "displayName": "vendor_name_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_id_status",
+              "displayName": "vendor_vat_id_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch_status",
+              "displayName": "vendor_branch_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "net_amount_status",
+              "displayName": "net_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vat_amount_status",
+              "displayName": "vat_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "grand_total_status",
+              "displayName": "grand_total_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_in_pdf",
+              "displayName": "missing_in_pdf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_in_excel",
+              "displayName": "missing_in_excel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "all_ok",
+              "displayName": "all_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vendor_vat_id_info_status",
+              "displayName": "vendor_vat_id_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1040, -480],
+      "id": "675e29f6-7b1f-4283-a48a-249d7de3248e",
+      "name": "Update rows in a table5",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "yR7oFYlj86Cp3uzY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/yR7oFYlj86Cp3uzY",
+          "cachedResultName": "Compare Address"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [1040, -64],
+      "id": "c578001c-f5a1-4df8-b396-54be70e44b2a",
+      "name": "Call 'Compare Address'"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e7324a52-ac4e-488d-a8d2-9cc66509aed7",
+              "leftValue": "={{ $json.vendor_name }}",
+              "rightValue": "กรมศุลกากร",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "21e3f23e-1ccf-44da-ac8d-4a3c7ecf7f23",
+              "leftValue": "={{ $json.doc_title }}",
+              "rightValue": "แบบนำส่งภาษีมูลค่าเพิ่ม",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "196d8a97-5533-4ecc-b03c-8f6b5c3f7388",
+              "leftValue": "={{ $json.doc_title }}",
+              "rightValue": "แบบนำส่งภาษีมูลค่าเพิ่ม ตามประมวลรัษฎากร",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "6602e9f7-eeaa-42e6-814a-4b6ac57cfef5",
+              "leftValue": "={{ $json.doc_title }}",
+              "rightValue": "แบบนำส่งภาษีมูลค่าเพิ่ม ภ.พ.36",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "6b8362d3-429f-4801-886e-0fa293c0e51c",
+              "leftValue": "={{ $json.doc_title }}",
+              "rightValue": "แบบนำส่งภาษีมูลค่าเพิ่ม ภ.พ.36 ตามประมวลรัษฎากร",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "61b4cfa7-3d10-456a-b92c-7fcb636c25d3",
+              "leftValue": "={{ $json.doc_title }}",
+              "rightValue": "แบบนำส่งภาษีมูลค่าเพิ่ม ตามประมวลรัษฎากร ภ.พ.36 ",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [224, -336],
+      "id": "ddd0a2ce-eab8-40da-9a87-74b4a2708723",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "={{ $json.schema }}",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "invoice_check_summary",
+          "mode": "list",
+          "cachedResultName": "invoice_check_summary"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "buyer_vat_info_status": "={{ true }}",
+            "invoice_number": "={{ $json.invoice_number }}"
+          },
+          "matchingColumns": ["invoice_number"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_id",
+              "displayName": "invoice_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "vendor_vat_id",
+              "displayName": "vendor_vat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch",
+              "displayName": "vendor_branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "invoice_status",
+              "displayName": "invoice_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "buyer_vat_info_status",
+              "displayName": "buyer_vat_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "invoice_number_status",
+              "displayName": "invoice_number_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date_raw_status",
+              "displayName": "date_raw_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_name_status",
+              "displayName": "vendor_name_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_id_status",
+              "displayName": "vendor_vat_id_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_vat_info_status",
+              "displayName": "vendor_vat_info_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vendor_branch_status",
+              "displayName": "vendor_branch_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "net_amount_status",
+              "displayName": "net_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vat_amount_status",
+              "displayName": "vat_amount_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "grand_total_status",
+              "displayName": "grand_total_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "all_ok",
+              "displayName": "all_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [432, -416],
+      "id": "9b0595d2-e834-486e-85db-8dd3f742d7a2",
+      "name": "Update rows in a table6",
       "credentials": {
         "postgres": {
           "id": "U97z4MVW6z8NDJpd",
@@ -2484,27 +1441,12 @@
       "main": [
         [
           {
-            "node": "Check Invoice Status",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Insert Summary Record",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Check Amount OK",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Check Vendor in DB",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Check Buyer in DB",
             "type": "main",
             "index": 0
           },
@@ -2537,40 +1479,9 @@
             "node": "Update rows in a table8",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Invoice Status": {
-      "main": [
-        [
+          },
           {
-            "node": "Update Summary Table",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Update rows in a table2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Amount OK": {
-      "main": [
-        [
-          {
-            "node": "Update rows in a table3",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Update rows in a table4",
+            "node": "If",
             "type": "main",
             "index": 0
           }
@@ -2650,12 +1561,7 @@
       "main": [
         [
           {
-            "node": "Execute a SQL query",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge5",
+            "node": "Call 'Compare Address'",
             "type": "main",
             "index": 0
           }
@@ -2684,40 +1590,7 @@
         ]
       ]
     },
-    "Execute a SQL query": {
-      "main": [
-        [
-          {
-            "node": "Merge5",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge5": {
-      "main": [
-        [
-          {
-            "node": "Compare PDF vs DB",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Compare PDF vs DB": {
-      "main": [
-        [
-          {
-            "node": "Check Address Match",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Address Match": {
+    "If": {
       "main": [
         [
           {
@@ -2728,7 +1601,7 @@
         ],
         [
           {
-            "node": "Update rows in a table7",
+            "node": "Check Buyer in DB",
             "type": "main",
             "index": 0
           }
@@ -2740,7 +1613,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "41c51fe6-37f8-4758-961f-364f9de9737d",
+  "versionId": "da494b64-d7e8-4fe7-9fab-7e07ec58cb7f",
   "meta": {
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
   },

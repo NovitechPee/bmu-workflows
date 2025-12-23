@@ -7,10 +7,7 @@
       "name": "Start",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [
-        -1824,
-        256
-      ]
+      "position": [-1824, 256]
     },
     {
       "parameters": {
@@ -26,10 +23,7 @@
       "name": "HTTP: RD VAT Lookup",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        -1616,
-        256
-      ],
+      "position": [-1616, 256],
       "onError": "continueRegularOutput"
     },
     {
@@ -40,10 +34,7 @@
       "name": "XML to JSON",
       "type": "n8n-nodes-base.xml",
       "typeVersion": 1,
-      "position": [
-        -1424,
-        256
-      ]
+      "position": [-1424, 256]
     },
     {
       "parameters": {
@@ -53,10 +44,7 @@
       "name": "Normalize RD Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        -1216,
-        256
-      ]
+      "position": [-1216, 256]
     },
     {
       "parameters": {
@@ -68,17 +56,14 @@
       "name": "Merge Input",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        -1008,
-        256
-      ]
+      "position": [-1008, 256]
     },
     {
       "parameters": {
         "operation": "upsert",
         "schema": {
           "__rl": true,
-          "value": "public",
+          "value": "global",
           "mode": "name"
         },
         "table": {
@@ -95,10 +80,7 @@
             "company_name": "={{ $json.rd_company_name }}",
             "address": "={{ $json.rd_address_raw }}"
           },
-          "matchingColumns": [
-            "vat_id",
-            "branch"
-          ],
+          "matchingColumns": ["vat_id", "branch"],
           "schema": [
             {
               "id": "id",
@@ -176,10 +158,7 @@
       "name": "Upsert VAT Company",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        -672,
-        112
-      ],
+      "position": [-528, -128],
       "credentials": {
         "postgres": {
           "id": "U97z4MVW6z8NDJpd",
@@ -214,10 +193,7 @@
       "name": "Switch Type",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [
-        -688,
-        272
-      ]
+      "position": [-784, 256]
     },
     {
       "parameters": {
@@ -227,10 +203,7 @@
       "name": "Compare Address (Buyer)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        -416,
-        144
-      ]
+      "position": [-528, 144]
     },
     {
       "parameters": {
@@ -240,10 +213,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        -352,
-        384
-      ],
+      "position": [-528, 336],
       "id": "2486d71b-48a1-4478-9672-e1cb2b9a3639",
       "name": "Merge"
     },
@@ -255,10 +225,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        -176,
-        16
-      ],
+      "position": [-304, 64],
       "id": "14bc4a38-14a9-4509-9b02-849cd7ab7a9d",
       "name": "Merge1"
     },
@@ -282,9 +249,7 @@
             "invoice_number": "={{ $json.invoice_number }}",
             "vendor_vat_id_info_status": "={{ $json.rd_success }}"
           },
-          "matchingColumns": [
-            "invoice_number"
-          ],
+          "matchingColumns": ["invoice_number"],
           "schema": [
             {
               "id": "id",
@@ -494,10 +459,7 @@
       "name": "Update Summary (Vendor)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        -160,
-        384
-      ],
+      "position": [-304, 336],
       "credentials": {
         "postgres": {
           "id": "U97z4MVW6z8NDJpd",
@@ -532,10 +494,7 @@
       "name": "Check RD Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [
-        -864,
-        112
-      ]
+      "position": [-752, -112]
     },
     {
       "parameters": {
@@ -557,9 +516,7 @@
             "invoice_number": "={{ $json.invoice_number }}",
             "buyer_vat_info_status": "={{ $json.buyer_address_status }}"
           },
-          "matchingColumns": [
-            "invoice_number"
-          ],
+          "matchingColumns": ["invoice_number"],
           "schema": [
             {
               "id": "id",
@@ -770,10 +727,7 @@
       "name": "Update Summary (Buyer)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [
-        0,
-        0
-      ],
+      "position": [-80, 64],
       "credentials": {
         "postgres": {
           "id": "U97z4MVW6z8NDJpd",
@@ -925,7 +879,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "58dcb391-5938-49f7-b22f-19a7eeab9173",
+  "versionId": "a505b395-6d7a-4b19-adf6-f30193239080",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
