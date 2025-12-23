@@ -5,21 +5,21 @@
       "parameters": {
         "options": {}
       },
-      "id": "672bc0a0-7bca-43dc-a8b7-47d9f24c1a44",
+      "id": "513fc367-9cd7-4322-8320-471fa9253852",
       "name": "Spreadsheet File: Read",
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [-2544, -32]
+      "position": [-3424, 560]
     },
     {
       "parameters": {
         "jsCode": "// === Helper Functions ===\n\nfunction cleanSpaces(s) {\n    return String(s ?? '')\n        .replace(/[\\u00A0\\u1680\\u2000-\\u200D\\u202F\\u205F\\u3000\\uFEFF]/g, ' ')\n        .replace(/[\\t\\r\\n]+/g, ' ')\n        .replace(/\\s+/g, ' ')\n        .trim();\n}\n\nfunction onlyDigits(s) {\n    return String(s ?? '').replace(/\\D/g, '');\n}\n\nfunction normVatId(v) {\n    if (v === null || v === undefined || v === '') return null;\n    let s = onlyDigits(v);\n    if (!s) return null;\n    if (/^0+$/.test(s)) return '0';\n    if (s.length < 13) s = s.padStart(13, '0');\n    return s;\n}\n\nfunction normBranch(b) {\n    if (b === null || b === undefined) return null;\n    let raw = String(b).trim();\n    if (!raw || raw === 'รวม') return '00000';\n    let s = onlyDigits(raw);\n    if (!s) return '00000';\n    if (s === '0') s = '0';\n    return s.padStart(5, '0');\n}\n\nfunction parseAmount(val) {\n    if (val === null || val === undefined || val === '') return null;\n    if (typeof val === 'number' && Number.isFinite(val)) return val;\n    const normalized = String(val).replace(/[^\\d.\\-]/g, '');\n    if (!normalized) return null;\n    const n = Number(normalized);\n    return Number.isNaN(n) ? null : n;\n}\n\nfunction normalizeCompanyName(name) {\n    if (!name) return null;\n    let s = cleanSpaces(String(name));\n    s = s.replace(/[“”\"']/g, '');\n    s = cleanSpaces(s);\n    return s || null;\n}\n\n// === MAIN LOGIC ===\n\n// 1. ตั้งตัวแปรเก็บค่า\nlet reportCompany = null;\nlet reportTaxFormId = null;\nconst out = [];\n\n// 2. Loop ครั้งแรก: เพื่อหา Header รายงาน (โดยดูจากทุกบรรทัด)\nfor (const item of items) {\n    // รองรับทั้งแบบมี .json และไม่มี\n    const r = item.json ? item.json : item; \n\n    const reportTitle = cleanSpaces(r['ชื่อรายงาน : '] ?? '');\n    const reportValue = cleanSpaces(r['รายงานภาษีซื้อ'] ?? '');\n\n    // เช็คหาชื่อบริษัทรายงาน (ไม่สนใจว่าบรรทัดนั้นจะเป็น invoice หรือไม่)\n    if (reportTitle.includes('ชื่อกิจการ') && reportValue) {\n        reportCompany = reportValue;\n    }\n    // เช็คหาเลขที่แบบภาษี\n    if (reportTitle.includes('เลขที่แบบภาษี') && reportValue) {\n        reportTaxFormId = reportValue;\n    }\n}\n\n// 3. Loop ครั้งที่สอง: เพื่อจัดการข้อมูล Invoice และใส่ค่าที่หาได้ลงไป\nfor (const item of items) {\n    // รองรับทั้งแบบมี .json และไม่มี\n    const r = item.json ? item.json : item; \n\n    const inv = cleanSpaces(r['เลขที่ใบกำกับภาษี'] ?? '');\n    const branchText = cleanSpaces(r['สาขา/สำนักงานใหญ่'] ?? '');\n\n    // กรอง: ต้องมีเลขที่ใบกำกับ และ ไม่ใช่บรรทัด 'รวม'\n    if (!inv || branchText === 'รวม') {\n        continue;\n    }\n\n    // ---- Mapping Data ----\n    const date = cleanSpaces(r['วันที่ใบกำกับภาษี'] ?? '');\n    const ref_doc = cleanSpaces(r['เลขที่เอกสารอ้างอิง'] ?? '');\n    const doc_title = cleanSpaces(r['ประเภทใบกำกับ'] ?? '');\n    const contact_code = cleanSpaces(r['รหัสผู้ติดต่อ'] ?? '');\n    const vname = cleanSpaces(r['ผู้ติดต่อ'] ?? '');\n    const vvat = r['เลขทะเบียนผู้เสียภาษี'] ?? '';\n    const vbr = r['สาขา/สำนักงานใหญ่'] ?? '';\n    const net = r['รายการภาษี 7%'];\n    const vat = r['ภาษีมูลค่าเพิ่ม'];\n    const grand = r['มูลค่ารวมภาษี'];\n    const status = cleanSpaces(r['สถานะ'] ?? '');\n\n    const vendor_name = normalizeCompanyName(vname);\n    const vendor_vat_id = normVatId(vvat);\n    const vendor_branch = normBranch(vbr);\n    const net_amount = parseAmount(net);\n    const vat_amount = parseAmount(vat);\n    const grand_total = parseAmount(grand);\n\n    out.push({\n        json: {\n            invoice_number: inv,\n            date_raw: date,\n            vendor_name,\n            vendor_vat_id,\n            vendor_branch,\n            net_amount,\n            vat_amount,\n            grand_total,\n            ref_doc,\n            doc_title: doc_title || null,\n            contact_code,\n            status_text: status || null,\n            \n            // ใส่ค่าที่ดึงได้จาก Loop แรก\n            report_company_name: reportCompany,\n            report_tax_form_id: reportTaxFormId\n        },\n        pairedItem: item.pairedItem\n    });\n}\n\nreturn out;"
       },
-      "id": "262093ca-58f9-4f55-b19b-21cb9974cead",
+      "id": "ed38fb72-34dd-4abb-9333-a625ad62cdee",
       "name": "Code: Normalize rows",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2320, -32]
+      "position": [-3200, 560]
     },
     {
       "parameters": {
@@ -40,8 +40,8 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-2544, 160],
-      "id": "963a1aa6-acec-4416-9f23-bf82fb183d69",
+      "position": [-3424, 752],
+      "id": "f35c8232-0982-4594-a10b-d388ababd475",
       "name": "Fetch Invoices from DB",
       "credentials": {
         "postgres": {
@@ -52,24 +52,14 @@
     },
     {
       "parameters": {
-        "jsCode": "// Compare Logic (Simplified) - With Flexible Name Comparison\n// Inputs:\n// 1. Excel Rows (Normalized) from \"Code: Normalize rows\"\n// 2. DB Rows (Normalized) from \"Normalize DB Rows\"\n\nfunction sameAmount(a, b, eps = 0.01) {\n  if (a == null || b == null) return false;\n  const na = Number(a);\n  const nb = Number(b);\n  if (Number.isNaN(na) || Number.isNaN(nb)) return false;\n  return Math.abs(na - nb) <= eps;\n}\n\nfunction cleanSpaces(s) {\n    return String(s ?? '').trim(); \n}\n\n// *** ฟังก์ชันใหม่: ลบช่องว่างทั้งหมดเพื่อเทียบชื่อ ***\nfunction normalizeNameForCompare(s) {\n    if (!s) return \"\";\n    return String(s).replace(/\\s+/g, ''); // ลบ space, tab, newline ทั้งหมด\n}\n\n// 1) Get Data\nconst excelItems = $items('Code: Normalize rows', 0, 0);\nconst excelRows  = excelItems.map(i => i.json);\n\nconst dbItems = $items('Normalize DB Rows', 0, 0);\nconst dbRows  = dbItems.map(i => i.json);\n\n// 2) Build Map (DB)\nconst dbMap = new Map();\nconst dbKeySet = new Set();\nconst excelKeySet = new Set();\n\nfor (const row of dbRows) {\n  const key = [row._norm_invoice_number, row._norm_vendor_vat_id, row._norm_vendor_branch].join('|');\n  dbKeySet.add(key);\n  if (!dbMap.has(key)) {\n    dbMap.set(key, row);\n  }\n}\n\n// 3) Pass 1: Excel -> DB\nconst out = [];\n\nfor (let index = 0; index < excelRows.length; index++) {\n  const r = excelRows[index];\n  \n  const invoice_number = r.invoice_number; \n  const vendor_vat_id  = r.vendor_vat_id;\n  const vendor_branch  = r.vendor_branch;\n  const vendor_name    = r.vendor_name;\n\n  if (!invoice_number && !vendor_vat_id && !vendor_name) continue;\n\n  const key = [invoice_number, vendor_vat_id, vendor_branch].join('|');\n  excelKeySet.add(key);\n\n  const inv = dbMap.get(key) || null;\n  let all_ok = false;\n  \n  let invoice_number_status = null;\n  let date_raw_status       = null;\n  let vendor_name_status    = null;\n  let vendor_vat_id_status  = null;\n  let vendor_branch_status  = null;\n  let net_amount_status     = null;\n  let vat_amount_status     = null;\n  let grand_total_status    = null;\n\n  if (inv) {\n    // Compare\n    invoice_number_status = (invoice_number === inv._norm_invoice_number);\n    \n    // Date\n    date_raw_status = (cleanSpaces(r.date_raw) === cleanSpaces(inv.date_raw));\n    \n    // *** แก้ไขตรงนี้: ใช้ normalizeNameForCompare ***\n    // เทียบแบบตัดช่องว่างทิ้ง: \"บริษัท ก\" จะเท่ากับ \"บริษัทก\"\n    vendor_name_status    = (normalizeNameForCompare(vendor_name) === normalizeNameForCompare(inv._norm_vendor_name));\n    \n    vendor_vat_id_status  = (vendor_vat_id  === inv._norm_vendor_vat_id);\n    vendor_branch_status  = (vendor_branch  === inv._norm_vendor_branch);\n\n    net_amount_status     = sameAmount(r.net_amount,  inv.net_amount);\n    vat_amount_status     = sameAmount(r.vat_amount,  inv.vat_amount);\n    grand_total_status    = sameAmount(r.grand_total, inv.grand_total);\n\n    all_ok = [\n      invoice_number_status, date_raw_status, vendor_name_status,\n      vendor_vat_id_status, vendor_branch_status,\n      net_amount_status, vat_amount_status, grand_total_status\n    ].every(v => v === true);\n  }\n\n  out.push({\n    json: {\n      source: 'excel',\n      missing_in_pdf: !inv,\n      missing_in_excel: false,\n      invoice_id: inv ? inv.id : null,\n      invoice_number, vendor_vat_id, vendor_branch,\n      invoice_number_status, date_raw_status, vendor_name_status,\n      vendor_vat_id_status, vendor_branch_status,\n      net_amount_status, vat_amount_status, grand_total_status,\n      invoice_status: null, buyer_vat_info_status: null,\n      all_ok,\n    },\n    pairedItem: excelItems[index]?.pairedItem,\n  });\n}\n\n// 4) Pass 2: DB -> Excel\nfor (const db of dbRows) {\n  const key = [db._norm_invoice_number, db._norm_vendor_vat_id, db._norm_vendor_branch].join('|');\n  \n  if (!excelKeySet.has(key)) {\n    out.push({\n      json: {\n        source: 'pdf',\n        missing_in_pdf: false,\n        missing_in_excel: true,\n        invoice_id: db.id,\n        invoice_number: db._norm_invoice_number,\n        vendor_vat_id:  db._norm_vendor_vat_id,\n        vendor_branch:  db._norm_vendor_branch,\n        invoice_number_status: null, date_raw_status: null, vendor_name_status: null,\n        vendor_vat_id_status: null, vendor_branch_status: null,\n        net_amount_status: null, vat_amount_status: null, grand_total_status: null,\n        invoice_status: null, buyer_vat_info_status: null,\n        all_ok: false,\n      }\n    });\n  }\n}\n\nreturn out;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-1440, 128],
-      "id": "222f4565-c2a6-4447-9686-65fe1b499053",
-      "name": "Compare Logic"
-    },
-    {
-      "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {}
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-1920, 48],
-      "id": "66eb4892-f40e-406b-8ed2-9c1149e78792",
+      "position": [-2800, 640],
+      "id": "a426c4e7-39a9-44d0-8ad6-fe19db66bbd7",
       "name": "Merge Excel and DB"
     },
     {
@@ -303,8 +293,8 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-752, 208],
-      "id": "1be45b57-ea12-4a05-8438-aece47fe50c6",
+      "position": [-1856, 800],
+      "id": "ece17f6e-d0b3-4e93-8b48-875ea1df0563",
       "name": "Update Invoice Summary",
       "credentials": {
         "postgres": {
@@ -320,8 +310,8 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
-      "position": [-2768, -32],
-      "id": "882ab40c-aa95-49ad-9c57-bf21b13394bf",
+      "position": [-3648, 560],
+      "id": "dc7be69e-18da-4686-88dd-37472a0efc56",
       "name": "Read Excel File",
       "alwaysOutputData": false
     },
@@ -336,8 +326,8 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-3216, 240],
-      "id": "5f0015c3-82bd-4909-80a3-1066d0c318b0",
+      "position": [-4096, 832],
+      "id": "d73957e4-e19b-4fa1-9f3c-b49bfab2e5d4",
       "name": "Webhook",
       "webhookId": "ecb7626f-8968-4654-be8f-555b9f7f12f7"
     },
@@ -349,8 +339,8 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-1680, -128],
-      "id": "44af7888-b967-4a7e-b0b9-519d1d1df7cf",
+      "position": [-2560, 464],
+      "id": "443d0db1-e95f-4a8e-a1d7-0b148736bcc3",
       "name": "Merge Comparison Results"
     },
     {
@@ -361,8 +351,8 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-1200, 208],
-      "id": "20d6eaa5-eb2e-4ce5-b384-f8c4a2a53660",
+      "position": [-2080, 800],
+      "id": "f402fdb8-67c0-4dc9-a598-d5f47eff882c",
       "name": "Merge Final Results"
     },
     {
@@ -577,8 +567,8 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-1456, -224],
-      "id": "49768458-d732-4140-9340-1dee9194fb0b",
+      "position": [-2336, 368],
+      "id": "13a856c4-df00-43ba-8a9d-19917429739b",
       "name": "Insert Missing Invoices",
       "credentials": {
         "postgres": {
@@ -590,32 +580,14 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT\n  -- ===== 1) ข้อมูลจาก Excel (excel_purchase_tax) =====\n  e.*,\n  NULL::text AS excel_name,\n\n  -- ===== 2) ข้อมูลจาก invoices (PDF) =====\n  i.id                AS pdf_id,\n  i.invoice_number    AS pdf_invoice_number,\n  i.date_raw          AS pdf_date_raw,\n  i.doc_title         AS pdf_doc_title,\n  i.vendor_name       AS pdf_vendor_name,\n  i.vendor_vat_id     AS pdf_vendor_vat_id,\n  i.vendor_branch     AS pdf_vendor_branch,\n  i.net_amount        AS pdf_net_amount,\n  i.vat_amount        AS pdf_vat_amount,\n  i.grand_total       AS pdf_grand_total,\n  i.name              AS pdf_name,\n  i.path              AS pdf_path,\n  i.created_at        AS pdf_created_at,\n\n  -- ===== 3) ข้อมูลจาก invoice_check_summary =====\n  s.id                        AS summary_id,\n  s.invoice_id                AS summary_invoice_id,\n  s.invoice_number            AS summary_invoice_number,\n  s.vendor_vat_id             AS summary_vendor_vat_id,\n  s.vendor_branch             AS summary_vendor_branch,\n  s.invoice_status,\n  s.buyer_vat_info_status,\n  s.invoice_number_status,\n  s.date_raw_status,\n  s.vendor_name_status,\n  s.vendor_vat_id_status,\n  s.vendor_vat_id_info_status,\n  s.vendor_branch_status,\n  s.net_amount_status,\n  s.vat_amount_status,\n  s.grand_total_status,\n  s.vat_calculation_status,\n  s.grand_total_calculation_status,\n\n  s.missing_in_pdf,\n  s.missing_in_excel,\n  s.all_ok,\n  s.updated_at                AS summary_updated_at\n\nFROM {{ $json.body.schema }}.excel_purchase_tax e\nFULL OUTER JOIN {{ $json.body.schema }}.invoices i\n  ON  i.invoice_number = e.invoice_number\n  AND i.vendor_vat_id  = e.vendor_vat_id\n  AND i.vendor_branch  = e.vendor_branch\n  \nLEFT JOIN {{ $json.body.schema }}.invoice_check_summary s\n  ON  s.invoice_number = COALESCE(e.invoice_number, i.invoice_number)\n  AND s.vendor_vat_id  = COALESCE(e.vendor_vat_id,  i.vendor_vat_id)\n  AND s.vendor_branch  = COALESCE(e.vendor_branch,  i.vendor_branch)\n\nORDER BY\n  COALESCE(e.invoice_number, i.invoice_number);\n",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [-2768, 576],
-      "id": "936c1a00-bd97-43ba-8298-a128b2c6b76c",
-      "name": "Fetch Comparison Report",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "options": {
           "fileName": "={{ $json.body.schema }}.csv"
         }
       },
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
-      "position": [-2544, 576],
-      "id": "a9c62d9a-071d-4996-b948-e44c78fa1a20",
+      "position": [-3440, 1168],
+      "id": "a3b1ef58-5c55-40ef-9fa2-f272ae36b7fb",
       "name": "Convert to File"
     },
     {
@@ -626,8 +598,8 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
-      "position": [-2096, 496],
-      "id": "f8960b80-c509-45a7-a95b-c41fdb9add87",
+      "position": [-2976, 1088],
+      "id": "c8b2712c-1397-4011-89a2-3c4400f6a5ae",
       "name": "Read/Write Files from Disk"
     },
     {
@@ -636,19 +608,9 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2992, 240],
-      "id": "5ceb7b20-cdea-4638-8631-63fd64506a3f",
+      "position": [-3872, 832],
+      "id": "bd107736-b73b-42a2-afca-b62a3dd17ae4",
       "name": "Hash Schema Name"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\n\n// update เฉพาะ items ที่มี invoice_number + vendor_vat_id + vendor_branch ครบ\nreturn items.filter(i => {\n  const j = i.json;\n  return (\n    j.invoice_number &&\n    String(j.invoice_number).trim() !== \"\" &&\n    j.vendor_vat_id &&\n    j.vendor_branch\n  );\n});\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-976, 208],
-      "id": "6d3e3ba7-10ef-484d-9eb4-03a46b5ffa65",
-      "name": "Filter Valid Rows"
     },
     {
       "parameters": {
@@ -833,8 +795,8 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-1456, -32],
-      "id": "b1494db4-2078-4a7b-94b2-2fb54a2a151d",
+      "position": [-2336, 560],
+      "id": "2a66d053-b432-434c-85cd-265158895de2",
       "name": "Insert rows in a table",
       "credentials": {
         "postgres": {
@@ -852,19 +814,19 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-2320, 496],
-      "id": "b4207f01-0c49-4c63-9a83-6b2c15e39309",
+      "position": [-3200, 1088],
+      "id": "4be5a413-f5cb-45a1-96ea-650fc21bdcb2",
       "name": "Merge3"
     },
     {
       "parameters": {
         "jsCode": "// Normalize DB rows\nfunction cleanSpaces(s) {\n  return String(s ?? '')\n    .replace(/[\\u00A0\\u1680\\u2000-\\u200D\\u202F\\u205F\\u3000\\uFEFF]/g, ' ')\n    .replace(/[\\t\\r\\n]+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nfunction onlyDigits(s) {\n  return String(s ?? '').replace(/\\D/g, '');\n}\n\nfunction normVatId(v) {\n  if (v == null || v === '') return null;\n  let s = onlyDigits(v);\n  if (!s) return null;\n  if (/^0+$/.test(s)) return '0';\n  return s.padStart(13, '0');\n}\n\nfunction normBranch(b) {\n  if (b == null) return null;\n  let s = onlyDigits(String(b));\n  if (!s) return '00000';\n  return s.padStart(5, '0');\n}\n\nfunction normalizeCompanyName(name) {\n  if (!name) return null;\n  let s = cleanSpaces(String(name));\n  s = s.replace(/[“”\"']/g, '');\n  s = s.replace(/\\u200B/g, '');\n  s = s.replace(/\\s+/g, '');\n  return s || null;\n}\n\nconst items = $input.all();\nreturn items.map(item => {\n  const row = item.json;\n  return {\n    json: {\n      ...row,\n      _norm_invoice_number: cleanSpaces(row.invoice_number),\n      _norm_vendor_vat_id: normVatId(row.vendor_vat_id),\n      _norm_vendor_branch: normBranch(row.vendor_branch),\n      _norm_vendor_name: normalizeCompanyName(row.vendor_name)\n    }\n  };\n});\n"
       },
-      "id": "106bd272-5a5f-4b84-a7da-a6f392999c99",
+      "id": "60eefbc0-fd53-4c18-b543-b09cbc9cb775",
       "name": "Normalize DB Rows",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2320, 160]
+      "position": [-3200, 752]
     },
     {
       "parameters": {
@@ -874,8 +836,8 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-2768, 832],
-      "id": "28c4a617-5ce9-482e-8e7e-dbc434736a3e",
+      "position": [-3648, 1424],
+      "id": "d6866714-9ead-46d4-bb47-3116d7faf289",
       "name": "Execute a SQL query",
       "credentials": {
         "postgres": {
@@ -892,8 +854,8 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-2096, -32],
-      "id": "654994c8-e216-4f65-9ff6-38edd2942329",
+      "position": [-2976, 560],
+      "id": "5607f357-cd05-4c9e-9dc9-5270b6dee61f",
       "name": "Execute a SQL query1",
       "credentials": {
         "postgres": {
@@ -906,9 +868,37 @@
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-1712, 128],
-      "id": "ba4e1269-1cf8-4596-84fe-d5c97bb41a57",
+      "position": [-2592, 720],
+      "id": "997fb3e9-67ad-4ac7-b407-b8e9b03ac029",
       "name": "Merge Excel and DB1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  -- ===== 1) ข้อมูลจาก Excel (excel_purchase_tax) =====\n  e.*,\n  NULL::text AS excel_name,\n\n  -- ===== 2) ข้อมูลจาก invoices (PDF) =====\n  i.id                AS pdf_id,\n  i.invoice_number    AS pdf_invoice_number,\n  i.date_raw          AS pdf_date_raw,\n  i.doc_title         AS pdf_doc_title,\n  i.vendor_name       AS pdf_vendor_name,\n  i.vendor_vat_id     AS pdf_vendor_vat_id,\n  i.vendor_branch     AS pdf_vendor_branch,\n  i.net_amount        AS pdf_net_amount,\n  i.vat_amount        AS pdf_vat_amount,\n  i.grand_total       AS pdf_grand_total,\n  i.name              AS pdf_name,\n  i.path              AS pdf_path,\n  i.created_at        AS pdf_created_at,\n\n  -- ===== 3) ข้อมูลจาก invoice_check_summary =====\n  s.id                        AS summary_id,\n  s.invoice_id                AS summary_invoice_id,\n  s.invoice_number            AS summary_invoice_number,\n  s.vendor_vat_id             AS summary_vendor_vat_id,\n  s.vendor_branch             AS summary_vendor_branch,\n  s.invoice_status,\n  s.buyer_vat_info_status,\n  s.invoice_number_status,\n  s.date_raw_status,\n  s.vendor_name_status,\n  s.vendor_vat_id_status,\n  s.vendor_vat_id_info_status,\n  s.vendor_branch_status,\n  s.net_amount_status,\n  s.vat_amount_status,\n  s.grand_total_status,\n  s.vat_calculation_status,\n  s.grand_total_calculation_status,\n\n  s.missing_in_pdf,\n  s.missing_in_excel,\n  s.all_ok,\n  s.updated_at                AS summary_updated_at\n\nFROM {{ $json.body.schema }}.excel_purchase_tax e\nFULL OUTER JOIN {{ $json.body.schema }}.invoices i\n  ON i.invoice_number = e.invoice_number\n\nLEFT JOIN {{ $json.body.schema }}.invoice_check_summary s\n  ON s.invoice_number = COALESCE(e.invoice_number, i.invoice_number) -- เชื่อมผ่านเลขใบกำกับ\n\nORDER BY\n  COALESCE(e.invoice_number, i.invoice_number);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-3632, 1168],
+      "id": "8121fb88-3d3a-4cfb-ae0a-1521f43393ac",
+      "name": "Fetch Comparison Report1",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compare Logic - Updated with advanced Name Normalization\n// Inputs:\n// 1. Excel Rows (Normalized) from \"Code: Normalize rows\"\n// 2. DB Rows (Normalized) from \"Normalize DB Rows\"\n\n/**\n * เทียบตัวเลขเงิน \n */\nfunction sameAmount(a, b, eps = 0.01) {\n    if (a == null || b == null) return false;\n    const na = Number(a);\n    const nb = Number(b);\n    if (Number.isNaN(na) || Number.isNaN(nb)) return false;\n    return Math.abs(na - nb) <= eps;\n}\n\n/**\n * ลบช่องว่างหัว-ท้าย\n */\nfunction cleanSpaces(s) {\n    return String(s ?? '').trim(); \n}\n\n/**\n * ปรับชื่อให้เป็นมาตรฐานเดียวกันเพื่อใช้เทียบ\n * ลบคำว่า บริษัท, จำกัด, (มหาชน), บจก, บมจ และช่องว่างออกทั้งหมด\n */\nfunction normalizeNameForCompare(s) {\n    if (!s) return \"\";\n    let name = String(s);\n\n    // รายการคำที่ต้องการตัดออกเพื่อให้เหลือแต่ชื่อแบรนด์หลัก\n    const patterns = [\n        /\\(มหาชน\\)/g,\n        /มหาชน/g,\n        /\\(จำกัด\\)/g,\n        /จำกัด/g,\n        /จํากัด/g, \n        /บมจ\\./g,\n        /บจก\\./g,\n        /บริษัท/g,\n        /\\s+/g     // ลบช่องว่างทั้งหมด (Space, Tab, Newline)\n    ];\n\n    patterns.forEach(pattern => {\n        name = name.replace(pattern, '');\n    });\n\n    return name;\n}\n\n// --- 1) Get Data ---\nconst excelItems = $items('Code: Normalize rows', 0, 0);\nconst excelRows  = excelItems.map(i => i.json);\n\nconst dbItems = $items('Normalize DB Rows', 0, 0);\nconst dbRows  = dbItems.map(i => i.json);\n\n// --- 2) Build Map (DB) เพื่อใช้ค้นหาข้อมูลจากฝั่ง PDF ---\nconst dbMap = new Map();\nconst excelKeySet = new Set();\n\nfor (const row of dbRows) {\n    // ใช้ Invoice No + VAT ID + Branch เป็น Key ในการจับคู่\n    const key = [row._norm_invoice_number, row._norm_vendor_vat_id, row._norm_vendor_branch].join('|');\n    if (!dbMap.has(key)) {\n        dbMap.set(key, row);\n    }\n}\n\n// --- 3) Pass 1: Excel -> DB (ตรวจสอบว่าข้อมูลใน Excel มีใน PDF หรือไม่) ---\nconst out = [];\n\nfor (let index = 0; index < excelRows.length; index++) {\n    const r = excelRows[index];\n    \n    const invoice_number = r.invoice_number; \n    const vendor_vat_id  = r.vendor_vat_id;\n    const vendor_branch  = r.vendor_branch;\n    const vendor_name    = r.vendor_name;\n\n    // ข้ามแถวที่ไม่มีข้อมูลสำคัญ\n    if (!invoice_number && !vendor_vat_id && !vendor_name) continue;\n\n    const key = [invoice_number, vendor_vat_id, vendor_branch].join('|');\n    excelKeySet.add(key);\n\n    const inv = dbMap.get(key) || null;\n    let all_ok = false;\n    \n    let invoice_number_status = null;\n    let date_raw_status       = null;\n    let vendor_name_status    = null;\n    let vendor_vat_id_status  = null;\n    let vendor_branch_status  = null;\n    let net_amount_status     = null;\n    let vat_amount_status     = null;\n    let grand_total_status    = null;\n\n    if (inv) {\n        // --- ส่วนการเปรียบเทียบข้อมูล ---\n        invoice_number_status = (invoice_number === inv._norm_invoice_number);\n        date_raw_status = (cleanSpaces(r.date_raw) === cleanSpaces(inv.date_raw));\n        \n        // เทียบชื่อโดยใช้ฟังก์ชัน Normalize ใหม่\n        vendor_name_status = (normalizeNameForCompare(vendor_name) === normalizeNameForCompare(inv._norm_vendor_name));\n        \n        vendor_vat_id_status  = (vendor_vat_id  === inv._norm_vendor_vat_id);\n        vendor_branch_status  = (vendor_branch  === inv._norm_vendor_branch);\n\n        net_amount_status  = sameAmount(r.net_amount,  inv.net_amount);\n        vat_amount_status  = sameAmount(r.vat_amount,  inv.vat_amount);\n        grand_total_status = sameAmount(r.grand_total, inv.grand_total);\n\n        // สรุปผล: ต้อง True ทุกช่องถึงจะเป็น All OK\n        all_ok = [\n            invoice_number_status, date_raw_status, vendor_name_status,\n            vendor_vat_id_status, vendor_branch_status,\n            net_amount_status, vat_amount_status, grand_total_status\n        ].every(v => v === true);\n    }\n\n    out.push({\n        json: {\n            source: 'excel',\n            missing_in_pdf: !inv,\n            missing_in_excel: false,\n            invoice_id: inv ? inv.id : null,\n            invoice_number, vendor_vat_id, vendor_branch, vendor_name,\n            invoice_number_status, date_raw_status, vendor_name_status,\n            vendor_vat_id_status, vendor_branch_status,\n            net_amount_status, vat_amount_status, grand_total_status,\n            all_ok,\n        },\n        pairedItem: excelItems[index]?.pairedItem,\n    });\n}\n\n// --- 4) Pass 2: DB -> Excel (ตรวจสอบว่ามีไฟล์ PDF ไหนที่ไม่มีใน Excel บ้าง) ---\nfor (const db of dbRows) {\n    const key = [db._norm_invoice_number, db._norm_vendor_vat_id, db._norm_vendor_branch].join('|');\n    \n    if (!excelKeySet.has(key)) {\n        out.push({\n            json: {\n                source: 'pdf',\n                missing_in_pdf: false,\n                missing_in_excel: true,\n                invoice_id: db.id,\n                invoice_number: db._norm_invoice_number,\n                vendor_vat_id:  db._norm_vendor_vat_id,\n                vendor_branch:  db._norm_vendor_branch,\n                vendor_name:    db._norm_vendor_name,\n                all_ok: false,\n            }\n        });\n    }\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2400, 720],
+      "id": "191c2993-6cc1-483e-845a-bb6de61f5a77",
+      "name": "Compare Logic"
     }
   ],
   "connections": {
@@ -944,17 +934,6 @@
         [
           {
             "node": "Normalize DB Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Compare Logic": {
-      "main": [
-        [
-          {
-            "node": "Merge Final Results",
             "type": "main",
             "index": 0
           }
@@ -1024,18 +1003,7 @@
       "main": [
         [
           {
-            "node": "Filter Valid Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch Comparison Report": {
-      "main": [
-        [
-          {
-            "node": "Convert to File",
+            "node": "Update Invoice Summary",
             "type": "main",
             "index": 0
           }
@@ -1077,23 +1045,12 @@
             "index": 0
           },
           {
-            "node": "Fetch Comparison Report",
+            "node": "Merge3",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Merge3",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter Valid Rows": {
-      "main": [
-        [
-          {
-            "node": "Update Invoice Summary",
+            "node": "Fetch Comparison Report1",
             "type": "main",
             "index": 0
           }
@@ -1143,13 +1100,36 @@
           }
         ]
       ]
+    },
+    "Fetch Comparison Report1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Logic": {
+      "main": [
+        [
+          {
+            "node": "Merge Final Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": true
   },
-  "versionId": "feb01901-4a9d-4ea1-8cdb-902f6935208f",
+  "versionId": "8ffa87a3-010e-4a5c-9a7d-ce9233f5176a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"

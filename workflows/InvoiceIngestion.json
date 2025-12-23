@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "fileSelector": "={{ $json.body.schema }}",
+        "fileSelector": "={{ $json.body.schema}}",
         "options": {}
       },
       "type": "n8n-nodes-base.readWriteFile",
@@ -220,7 +220,7 @@
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [768, 496],
+      "position": [800, 496],
       "id": "040bda1d-b34b-44ff-8248-ab4716019347",
       "name": "Loop Over Items1"
     },
@@ -871,7 +871,7 @@
     "executionOrder": "v1",
     "availableInMCP": true
   },
-  "versionId": "cfda6f5b-fe59-408a-8423-73308bf43a65",
+  "versionId": "a11c8a82-8c81-4c50-a1a1-bd526aec718e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
