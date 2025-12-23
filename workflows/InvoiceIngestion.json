@@ -280,24 +280,6 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "-- ---------------------------------------------------------\n-- 0) ถ้ามี schema เดิมอยู่ → ลบทิ้งทั้งหมด (รวมตาราง)\n-- ---------------------------------------------------------\nDROP SCHEMA IF EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}} CASCADE;\n\n-- ---------------------------------------------------------\n-- 1) สร้าง schema ใหม่\n-- ---------------------------------------------------------\nCREATE SCHEMA IF NOT EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}};\n\n-- ---------------------------------------------------------\n-- 2) ตาราง invoices: เก็บข้อมูลจริงจาก PDF\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoices (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    doc_title        TEXT,\n\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n\n    name             TEXT UNIQUE,\n    path             TEXT UNIQUE,\n    is_done          BOOLEAN DEFAULT FALSE,\n\n    CONSTRAINT invoices_unique_triplet\n      UNIQUE (invoice_number, vendor_vat_id, vendor_branch),\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n\n-- ---------------------------------------------------------\n-- 3) ตาราง summary: 1-to-1 กับ invoices + unique composite key\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoice_check_summary (\n    id SERIAL PRIMARY KEY,\n\n    invoice_id INT UNIQUE REFERENCES {{\n      $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n    }}.invoices(id) ON DELETE CASCADE,\n\n    invoice_number    TEXT NOT NULL,\n    vendor_vat_id     TEXT NOT NULL,\n    vendor_branch     TEXT NOT NULL,\n\n    invoice_status                  BOOLEAN,\n    buyer_vat_info_status           BOOLEAN,\n    invoice_number_status           BOOLEAN,\n    date_raw_status                 BOOLEAN,\n    vendor_name_status              BOOLEAN,\n    vendor_vat_id_status            BOOLEAN,\n    vendor_vat_id_info_status       BOOLEAN,\n    vendor_branch_status            BOOLEAN,\n    net_amount_status               BOOLEAN,\n    vat_amount_status               BOOLEAN,\n    vat_calculation_status          BOOLEAN,\n    grand_total_status              BOOLEAN,\n    grand_total_calculation_status  BOOLEAN,\n\n    missing_in_pdf                  BOOLEAN,\n    missing_in_excel                BOOLEAN,\n    all_ok                          BOOLEAN,\n\n    updated_at                     TIMESTAMP DEFAULT NOW(),\n\n    CONSTRAINT uq_invoice_check_summary\n        UNIQUE (invoice_number, vendor_vat_id, vendor_branch)\n);\n\n-- ---------------------------------------------------------\n-- 4) ตาราง Excel purchase tax\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.excel_purchase_tax (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    ref_doc          TEXT,\n    doc_title        TEXT,\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n    report_company_name TEXT,\n    report_tax_form_id  TEXT,\n    source_id           INTEGER,\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [192, 48],
-      "id": "45df4431-89b1-420d-9bfb-080e079ae5ca",
-      "name": "Create Schema For Company1",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "schema": {
           "__rl": true,
           "value": "={{ $json.schema }}",
@@ -465,7 +447,7 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
-      "position": [-512, 1072],
+      "position": [-368, 1040],
       "id": "2fa2feda-c59f-4b87-8524-c0cfd9414c76",
       "name": "Read/Write Files from Disk1"
     },
@@ -477,7 +459,7 @@
       "name": "Spreadsheet File: Read",
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [-336, 1072]
+      "position": [-192, 1040]
     },
     {
       "parameters": {
@@ -486,7 +468,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-144, 1072],
+      "position": [0, 1040],
       "id": "04c952f3-e298-493f-a8d7-4702c3b31cb8",
       "name": "Code in JavaScript"
     },
@@ -660,7 +642,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [48, 1072],
+      "position": [192, 1040],
       "id": "98159a49-6cc1-4a59-a962-7a04e649f0f3",
       "name": "Insert rows in a table",
       "credentials": {
@@ -669,6 +651,35 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- ---------------------------------------------------------\n-- 0) ถ้ามี schema เดิมอยู่ → ลบทิ้งทั้งหมด (รวมตาราง)\n-- ---------------------------------------------------------\nDROP SCHEMA IF EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}} CASCADE;\n\n-- ---------------------------------------------------------\n-- 1) สร้าง schema ใหม่\n-- ---------------------------------------------------------\nCREATE SCHEMA IF NOT EXISTS {{\n  $json.schema\n    .toLowerCase()\n    .replace(/[^a-zA-Z0-9_]/g, '_')\n}};\n\n-- ---------------------------------------------------------\n-- 2) ตาราง invoices: เก็บข้อมูลจริงจาก PDF\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoices (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    doc_title        TEXT,\n\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n\n    name             TEXT UNIQUE,\n    path             TEXT UNIQUE,\n    is_done          BOOLEAN DEFAULT FALSE,\n\n    CONSTRAINT invoices_unique_triplet\n      UNIQUE (invoice_number, vendor_vat_id, vendor_branch),\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n\n-- ---------------------------------------------------------\n-- 3) ตาราง summary: 1-to-1 กับ invoices + unique composite key\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.invoice_check_summary (\n    id SERIAL PRIMARY KEY,\n\n    invoice_id INT UNIQUE REFERENCES {{\n      $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n    }}.invoices(id) ON DELETE CASCADE,\n\n    invoice_number    TEXT NOT NULL,\n    vendor_vat_id     TEXT NOT NULL,\n    vendor_branch     TEXT NOT NULL,\n\n    invoice_status                  BOOLEAN,\n    buyer_vat_info_status           BOOLEAN,\n    invoice_number_status           BOOLEAN,\n    date_raw_status                 BOOLEAN,\n    vendor_name_status              BOOLEAN,\n    vendor_vat_id_status            BOOLEAN,\n    vendor_vat_id_info_status       BOOLEAN,\n    vendor_branch_status            BOOLEAN,\n    net_amount_status               BOOLEAN,\n    vat_amount_status               BOOLEAN,\n    vat_calculation_status          BOOLEAN,\n    grand_total_status              BOOLEAN,\n    grand_total_calculation_status  BOOLEAN,\n\n    missing_in_pdf                  BOOLEAN,\n    missing_in_excel                BOOLEAN,\n    all_ok                          BOOLEAN,\n\n    updated_at                     TIMESTAMP DEFAULT NOW(),\n\n    CONSTRAINT uq_invoice_check_summary\n        UNIQUE (invoice_number, vendor_vat_id, vendor_branch)\n);\n\n-- ---------------------------------------------------------\n-- 4) ตาราง Excel purchase tax\n-- ---------------------------------------------------------\nCREATE TABLE IF NOT EXISTS {{\n  $json.schema.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_')\n}}.excel_purchase_tax (\n    id SERIAL PRIMARY KEY,\n\n    invoice_number   TEXT,\n    date_raw         TEXT,\n    ref_doc          TEXT,\n    doc_title        TEXT,\n    vendor_name      TEXT,\n    vendor_vat_id    TEXT,\n    vendor_branch    TEXT,\n\n    net_amount       NUMERIC(15,2),\n    vat_amount       NUMERIC(15,2),\n    grand_total      NUMERIC(15,2),\n    report_company_name TEXT,\n    report_tax_form_id  TEXT,\n    source_id           INTEGER,\n\n    created_at       TIMESTAMP DEFAULT NOW()\n);\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [192, 64],
+      "id": "7783600c-0107-4356-8e59-85dd550a7c60",
+      "name": "Create Schema For Company",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [-528, 1040],
+      "id": "4d44afdc-ffd5-4687-a2b9-a081544f6f65",
+      "name": "Wait",
+      "webhookId": "90b3cb35-18c6-4052-86ba-e0fd7784255c"
     }
   ],
   "connections": {
@@ -775,7 +786,7 @@
             "index": 1
           },
           {
-            "node": "Read/Write Files from Disk1",
+            "node": "Wait",
             "type": "main",
             "index": 0
           }
@@ -796,11 +807,6 @@
     "Hash Schema Name1": {
       "main": [
         [
-          {
-            "node": "Create Schema For Company1",
-            "type": "main",
-            "index": 0
-          },
           {
             "node": "Insert rows in a table1",
             "type": "main",
@@ -823,6 +829,11 @@
           },
           {
             "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Schema For Company",
             "type": "main",
             "index": 0
           }
@@ -864,6 +875,17 @@
           }
         ]
       ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -871,7 +893,7 @@
     "executionOrder": "v1",
     "availableInMCP": true
   },
-  "versionId": "a11c8a82-8c81-4c50-a1a1-bd526aec718e",
+  "versionId": "76ebd4fa-70a2-42c8-aec6-68db16e3f6e9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
