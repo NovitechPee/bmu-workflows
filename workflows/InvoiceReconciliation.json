@@ -874,24 +874,6 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT\n  -- ===== 1) ข้อมูลจาก Excel (excel_purchase_tax) =====\n  e.*,\n  NULL::text AS excel_name,\n\n  -- ===== 2) ข้อมูลจาก invoices (PDF) =====\n  i.id                AS pdf_id,\n  i.invoice_number    AS pdf_invoice_number,\n  i.date_raw          AS pdf_date_raw,\n  i.doc_title         AS pdf_doc_title,\n  i.vendor_name       AS pdf_vendor_name,\n  i.vendor_vat_id     AS pdf_vendor_vat_id,\n  i.vendor_branch     AS pdf_vendor_branch,\n  i.net_amount        AS pdf_net_amount,\n  i.vat_amount        AS pdf_vat_amount,\n  i.grand_total       AS pdf_grand_total,\n  i.name              AS pdf_name,\n  i.path              AS pdf_path,\n  i.created_at        AS pdf_created_at,\n\n  -- ===== 3) ข้อมูลจาก invoice_check_summary =====\n  s.id                        AS summary_id,\n  s.invoice_id                AS summary_invoice_id,\n  s.invoice_number            AS summary_invoice_number,\n  s.vendor_vat_id             AS summary_vendor_vat_id,\n  s.vendor_branch             AS summary_vendor_branch,\n  s.invoice_status,\n  s.buyer_vat_info_status,\n  s.invoice_number_status,\n  s.date_raw_status,\n  s.vendor_name_status,\n  s.vendor_vat_id_status,\n  s.vendor_vat_id_info_status,\n  s.vendor_branch_status,\n  s.net_amount_status,\n  s.vat_amount_status,\n  s.grand_total_status,\n  s.vat_calculation_status,\n  s.grand_total_calculation_status,\n\n  s.missing_in_pdf,\n  s.missing_in_excel,\n  s.all_ok,\n  s.updated_at                AS summary_updated_at\n\nFROM {{ $json.body.schema }}.excel_purchase_tax e\nFULL OUTER JOIN {{ $json.body.schema }}.invoices i\n  ON i.invoice_number = e.invoice_number\n\nLEFT JOIN {{ $json.body.schema }}.invoice_check_summary s\n  ON s.invoice_number = COALESCE(e.invoice_number, i.invoice_number) -- เชื่อมผ่านเลขใบกำกับ\n\nORDER BY\n  COALESCE(e.invoice_number, i.invoice_number);",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [-3632, 1168],
-      "id": "8121fb88-3d3a-4cfb-ae0a-1521f43393ac",
-      "name": "Fetch Comparison Report1",
-      "credentials": {
-        "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "jsCode": "// Compare Logic - Updated with advanced Name Normalization\n// Inputs:\n// 1. Excel Rows (Normalized) from \"Code: Normalize rows\"\n// 2. DB Rows (Normalized) from \"Normalize DB Rows\"\n\n/**\n * เทียบตัวเลขเงิน \n */\nfunction sameAmount(a, b, eps = 0.01) {\n    if (a == null || b == null) return false;\n    const na = Number(a);\n    const nb = Number(b);\n    if (Number.isNaN(na) || Number.isNaN(nb)) return false;\n    return Math.abs(na - nb) <= eps;\n}\n\n/**\n * ลบช่องว่างหัว-ท้าย\n */\nfunction cleanSpaces(s) {\n    return String(s ?? '').trim(); \n}\n\n/**\n * ปรับชื่อให้เป็นมาตรฐานเดียวกันเพื่อใช้เทียบ\n * ลบคำว่า บริษัท, จำกัด, (มหาชน), บจก, บมจ และช่องว่างออกทั้งหมด\n */\nfunction normalizeNameForCompare(s) {\n    if (!s) return \"\";\n    let name = String(s);\n\n    // รายการคำที่ต้องการตัดออกเพื่อให้เหลือแต่ชื่อแบรนด์หลัก\n    const patterns = [\n        /\\(มหาชน\\)/g,\n        /มหาชน/g,\n        /\\(จำกัด\\)/g,\n        /จำกัด/g,\n        /จํากัด/g, \n        /บมจ\\./g,\n        /บจก\\./g,\n        /บริษัท/g,\n        /\\s+/g     // ลบช่องว่างทั้งหมด (Space, Tab, Newline)\n    ];\n\n    patterns.forEach(pattern => {\n        name = name.replace(pattern, '');\n    });\n\n    return name;\n}\n\n// --- 1) Get Data ---\nconst excelItems = $items('Code: Normalize rows', 0, 0);\nconst excelRows  = excelItems.map(i => i.json);\n\nconst dbItems = $items('Normalize DB Rows', 0, 0);\nconst dbRows  = dbItems.map(i => i.json);\n\n// --- 2) Build Map (DB) เพื่อใช้ค้นหาข้อมูลจากฝั่ง PDF ---\nconst dbMap = new Map();\nconst excelKeySet = new Set();\n\nfor (const row of dbRows) {\n    // ใช้ Invoice No + VAT ID + Branch เป็น Key ในการจับคู่\n    const key = [row._norm_invoice_number, row._norm_vendor_vat_id, row._norm_vendor_branch].join('|');\n    if (!dbMap.has(key)) {\n        dbMap.set(key, row);\n    }\n}\n\n// --- 3) Pass 1: Excel -> DB (ตรวจสอบว่าข้อมูลใน Excel มีใน PDF หรือไม่) ---\nconst out = [];\n\nfor (let index = 0; index < excelRows.length; index++) {\n    const r = excelRows[index];\n    \n    const invoice_number = r.invoice_number; \n    const vendor_vat_id  = r.vendor_vat_id;\n    const vendor_branch  = r.vendor_branch;\n    const vendor_name    = r.vendor_name;\n\n    // ข้ามแถวที่ไม่มีข้อมูลสำคัญ\n    if (!invoice_number && !vendor_vat_id && !vendor_name) continue;\n\n    const key = [invoice_number, vendor_vat_id, vendor_branch].join('|');\n    excelKeySet.add(key);\n\n    const inv = dbMap.get(key) || null;\n    let all_ok = false;\n    \n    let invoice_number_status = null;\n    let date_raw_status       = null;\n    let vendor_name_status    = null;\n    let vendor_vat_id_status  = null;\n    let vendor_branch_status  = null;\n    let net_amount_status     = null;\n    let vat_amount_status     = null;\n    let grand_total_status    = null;\n\n    if (inv) {\n        // --- ส่วนการเปรียบเทียบข้อมูล ---\n        invoice_number_status = (invoice_number === inv._norm_invoice_number);\n        date_raw_status = (cleanSpaces(r.date_raw) === cleanSpaces(inv.date_raw));\n        \n        // เทียบชื่อโดยใช้ฟังก์ชัน Normalize ใหม่\n        vendor_name_status = (normalizeNameForCompare(vendor_name) === normalizeNameForCompare(inv._norm_vendor_name));\n        \n        vendor_vat_id_status  = (vendor_vat_id  === inv._norm_vendor_vat_id);\n        vendor_branch_status  = (vendor_branch  === inv._norm_vendor_branch);\n\n        net_amount_status  = sameAmount(r.net_amount,  inv.net_amount);\n        vat_amount_status  = sameAmount(r.vat_amount,  inv.vat_amount);\n        grand_total_status = sameAmount(r.grand_total, inv.grand_total);\n\n        // สรุปผล: ต้อง True ทุกช่องถึงจะเป็น All OK\n        all_ok = [\n            invoice_number_status, date_raw_status, vendor_name_status,\n            vendor_vat_id_status, vendor_branch_status,\n            net_amount_status, vat_amount_status, grand_total_status\n        ].every(v => v === true);\n    }\n\n    out.push({\n        json: {\n            source: 'excel',\n            missing_in_pdf: !inv,\n            missing_in_excel: false,\n            invoice_id: inv ? inv.id : null,\n            invoice_number, vendor_vat_id, vendor_branch, vendor_name,\n            invoice_number_status, date_raw_status, vendor_name_status,\n            vendor_vat_id_status, vendor_branch_status,\n            net_amount_status, vat_amount_status, grand_total_status,\n            all_ok,\n        },\n        pairedItem: excelItems[index]?.pairedItem,\n    });\n}\n\n// --- 4) Pass 2: DB -> Excel (ตรวจสอบว่ามีไฟล์ PDF ไหนที่ไม่มีใน Excel บ้าง) ---\nfor (const db of dbRows) {\n    const key = [db._norm_invoice_number, db._norm_vendor_vat_id, db._norm_vendor_branch].join('|');\n    \n    if (!excelKeySet.has(key)) {\n        out.push({\n            json: {\n                source: 'pdf',\n                missing_in_pdf: false,\n                missing_in_excel: true,\n                invoice_id: db.id,\n                invoice_number: db._norm_invoice_number,\n                vendor_vat_id:  db._norm_vendor_vat_id,\n                vendor_branch:  db._norm_vendor_branch,\n                vendor_name:    db._norm_vendor_name,\n                all_ok: false,\n            }\n        });\n    }\n}\n\nreturn out;"
       },
       "type": "n8n-nodes-base.code",
@@ -899,6 +881,24 @@
       "position": [-2400, 720],
       "id": "191c2993-6cc1-483e-845a-bb6de61f5a77",
       "name": "Compare Logic"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH\n-- =====================================================\n-- 1) Excel: เลือกแถวล่าสุดต่อ invoice (กันซ้ำ)\n-- =====================================================\nexcel_dedup AS (\n  SELECT *\n  FROM (\n    SELECT\n      e.*,\n      ROW_NUMBER() OVER (\n        PARTITION BY\n          e.invoice_number,\n          e.vendor_vat_id,\n          e.vendor_branch\n        ORDER BY e.created_at DESC\n      ) AS rn\n    FROM {{ $json.body.schema }}.excel_purchase_tax e\n  ) t\n  WHERE rn = 1\n),\n\n-- =====================================================\n-- 2) PDF invoices: เลือกแถวล่าสุดต่อ invoice\n-- =====================================================\ninvoice_dedup AS (\n  SELECT *\n  FROM (\n    SELECT\n      i.*,\n      ROW_NUMBER() OVER (\n        PARTITION BY\n          i.invoice_number,\n          i.vendor_vat_id,\n          i.vendor_branch\n        ORDER BY i.created_at DESC\n      ) AS rn\n    FROM {{ $json.body.schema }}.invoices i\n  ) t\n  WHERE rn = 1\n),\n\n-- =====================================================\n-- 3) Summary: เอาผลตรวจล่าสุดต่อ invoice\n-- =====================================================\nsummary_dedup AS (\n  SELECT *\n  FROM (\n    SELECT\n      s.*,\n      ROW_NUMBER() OVER (\n        PARTITION BY\n          s.invoice_number,\n          s.vendor_vat_id,\n          s.vendor_branch\n        ORDER BY s.updated_at DESC\n      ) AS rn\n    FROM {{ $json.body.schema }}.invoice_check_summary s\n  ) t\n  WHERE rn = 1\n)\n\n-- =====================================================\n-- 4) รวมผลทั้งหมด\n-- =====================================================\nSELECT\n  -- ===== Excel =====\n  e.*,\n  NULL::text AS excel_name,\n\n  -- ===== PDF =====\n  i.id           AS pdf_id,\n  i.invoice_number AS pdf_invoice_number,\n  i.date_raw     AS pdf_date_raw,\n  i.doc_title    AS pdf_doc_title,\n  i.vendor_name  AS pdf_vendor_name,\n  i.vendor_vat_id AS pdf_vendor_vat_id,\n  i.vendor_branch AS pdf_vendor_branch,\n  i.net_amount   AS pdf_net_amount,\n  i.vat_amount   AS pdf_vat_amount,\n  i.grand_total  AS pdf_grand_total,\n  i.name         AS pdf_name,\n  i.path         AS pdf_path,\n  i.created_at   AS pdf_created_at,\n\n  -- ===== Summary =====\n  s.id                        AS summary_id,\n  s.invoice_id                AS summary_invoice_id,\n  s.invoice_number            AS summary_invoice_number,\n  s.vendor_vat_id             AS summary_vendor_vat_id,\n  s.vendor_branch             AS summary_vendor_branch,\n\n  s.invoice_status,\n  s.buyer_vat_info_status,\n  s.invoice_number_status,\n  s.date_raw_status,\n  s.vendor_name_status,\n  s.vendor_vat_id_status,\n  s.vendor_vat_id_info_status,\n  s.vendor_branch_status,\n  s.net_amount_status,\n  s.vat_amount_status,\n  s.grand_total_status,\n  s.vat_calculation_status,\n  s.grand_total_calculation_status,\n\n  s.missing_in_pdf,\n  s.missing_in_excel,\n  s.all_ok,\n  s.updated_at AS summary_updated_at\n\nFROM excel_dedup e\nFULL OUTER JOIN invoice_dedup i\n  ON i.invoice_number = e.invoice_number\n AND i.vendor_vat_id  = e.vendor_vat_id\n AND i.vendor_branch  = e.vendor_branch\n\nLEFT JOIN summary_dedup s\n  ON s.invoice_number = COALESCE(e.invoice_number, i.invoice_number)\n AND s.vendor_vat_id  = COALESCE(e.vendor_vat_id,  i.vendor_vat_id)\n AND s.vendor_branch  = COALESCE(e.vendor_branch,  i.vendor_branch)\n\nORDER BY\n  COALESCE(e.invoice_number, i.invoice_number);\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-3648, 1088],
+      "id": "1940bdd1-a0cd-459e-a0df-c334224a5470",
+      "name": "Fetch Comparison Report",
+      "credentials": {
+        "postgres": {
+          "id": "U97z4MVW6z8NDJpd",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "connections": {
@@ -1050,7 +1050,7 @@
             "index": 0
           },
           {
-            "node": "Fetch Comparison Report1",
+            "node": "Fetch Comparison Report",
             "type": "main",
             "index": 0
           }
@@ -1101,22 +1101,22 @@
         ]
       ]
     },
-    "Fetch Comparison Report1": {
+    "Compare Logic": {
       "main": [
         [
           {
-            "node": "Convert to File",
+            "node": "Merge Final Results",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Compare Logic": {
+    "Fetch Comparison Report": {
       "main": [
         [
           {
-            "node": "Merge Final Results",
+            "node": "Convert to File",
             "type": "main",
             "index": 0
           }
@@ -1129,7 +1129,7 @@
     "executionOrder": "v1",
     "availableInMCP": true
   },
-  "versionId": "8ffa87a3-010e-4a5c-9a7d-ce9233f5176a",
+  "versionId": "39971c16-7d9b-4ac3-9d1f-deeac7a606ae",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
