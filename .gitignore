@@ -20,7 +20,6 @@ grafana/sessions/
 pgadmin/
 n8n-data/
 n8n-files/
-account_ui/.git
 
 # System
 .DS_Store
@@ -37,4 +36,3 @@ prometheus/data/
 
 # Node.js
 node_modules/
-account_ui/dist/
