@@ -96,7 +96,7 @@
       "maxTries": 5,
       "credentials": {
         "googlePalmApi": {
-          "id": "Ind0q5wLm5LOwGoI",
+          "id": "8hWlvthIpVaF1Zw1",
           "name": "Google Gemini(PaLM) Api account 2"
         }
       }
@@ -125,7 +125,7 @@
       "maxTries": 5,
       "credentials": {
         "googlePalmApi": {
-          "id": "c1SgChN1d7FfPADP",
+          "id": "XUFoT1UqJMpyaWnf",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -208,7 +208,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "12084f5e-26c8-4621-b7f6-a5cf51450644",
+  "versionId": "45423a7b-e5d5-493f-87d5-6a6ee93a9816",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"

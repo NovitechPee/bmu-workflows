@@ -187,9 +187,11 @@
       "position": [384, -800],
       "id": "cae95739-da2b-41a9-8928-d851093b1973",
       "name": "Update Invoices Table",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       },
@@ -473,9 +475,11 @@
       "position": [384, -1008],
       "id": "ba0615ac-3a52-4c03-87d5-4c7eeec4595d",
       "name": "Insert Summary Record",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       },
@@ -493,11 +497,11 @@
           "conditions": [
             {
               "id": "afb35b09-5020-4b8c-b492-0eac7f22bd18",
-              "leftValue": "={{ Object.keys($input.item.json).length }}\n",
+              "leftValue": "={{ Object.keys($json).length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
-                "operation": "equals"
+                "operation": "gt"
               }
             }
           ],
@@ -528,10 +532,11 @@
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -574,11 +579,11 @@
           "conditions": [
             {
               "id": "afb35b09-5020-4b8c-b492-0eac7f22bd18",
-              "leftValue": "={{ Object.keys($input.item.json).length }}\n",
+              "leftValue": "={{ Object.keys($json).length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
-                "operation": "equals"
+                "operation": "gt"
               }
             }
           ],
@@ -609,10 +614,11 @@
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -868,12 +874,15 @@
       "position": [400, 0],
       "id": "674374cd-9e12-49bb-a109-f8b651f33551",
       "name": "Update rows in a table8",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1107,12 +1116,15 @@
       "position": [1040, -480],
       "id": "675e29f6-7b1f-4283-a48a-249d7de3248e",
       "name": "Update rows in a table5",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1428,12 +1440,15 @@
       "position": [432, -416],
       "id": "9b0595d2-e834-486e-85db-8dd3f742d7a2",
       "name": "Update rows in a table6",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -1492,16 +1507,16 @@
       "main": [
         [
           {
-            "node": "Merge3",
+            "node": "Merge1",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ],
         [
           {
-            "node": "Merge1",
+            "node": "Merge3",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -1521,16 +1536,16 @@
       "main": [
         [
           {
-            "node": "Merge4",
+            "node": "Merge2",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ],
         [
           {
-            "node": "Merge2",
+            "node": "Merge4",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -1613,7 +1628,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "da494b64-d7e8-4fe7-9fab-7e07ec58cb7f",
+  "versionId": "c36cb84e-d83d-41fe-b9d5-c656f739c786",
   "meta": {
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
   },

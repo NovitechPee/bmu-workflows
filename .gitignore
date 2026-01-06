@@ -36,3 +36,5 @@ prometheus/data/
 
 # Node.js
 node_modules/
+
+.vscode/

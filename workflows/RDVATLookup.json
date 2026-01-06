@@ -159,12 +159,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [-528, -128],
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -460,12 +463,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [-304, 336],
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -728,12 +734,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [-80, 64],
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -879,7 +888,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a505b395-6d7a-4b19-adf6-f30193239080",
+  "versionId": "fe68334a-ad2c-4864-b936-b9f641a5e2d6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"

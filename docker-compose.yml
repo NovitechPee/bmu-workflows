@@ -8,7 +8,7 @@ x-logging: &default-logging
 
 services:
   n8n:
-    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION:-latest}
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION}
     container_name: n8n
     ports:
       - '5678:5678'
@@ -57,9 +57,6 @@ services:
           'CMD-SHELL',
           'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}',
         ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
     logging: *default-logging
 
   postgres-exporter:

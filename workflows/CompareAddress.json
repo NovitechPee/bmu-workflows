@@ -209,15 +209,18 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [688, -240],
+      "position": [688, -224],
       "id": "84b2291d-3b40-49f8-96d0-926eed43e44a",
       "name": "Update rows in a table6",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -232,9 +235,11 @@
       "position": [-160, 32],
       "id": "3ac98a41-a239-4cac-8e4c-ba099d1e908a",
       "name": "Execute a SQL query",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       }
@@ -499,12 +504,15 @@
       "position": [688, 32],
       "id": "2b9f001b-918c-4e96-845a-40a15f4d17fd",
       "name": "Update rows in a table7",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -590,7 +598,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "5ceb6278-6c69-41c4-b77c-f70dcaa00cd0",
+  "versionId": "273b17fc-0361-4969-9027-f72df32d3169",
   "meta": {
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
   },

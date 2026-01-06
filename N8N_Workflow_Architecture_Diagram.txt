@@ -1,0 +1,413 @@
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                          N8N INVOICE PROCESSING SYSTEM ARCHITECTURE                         │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   MAIN PROCESSING FLOW                                        │
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
+
+                                    ┌──────────────────┐
+                                    │  User/Frontend   │
+                                    │   (HTTP POST)    │
+                                    └────────┬─────────┘
+                                             │ PDF Invoices
+                                             │ + Schema Path
+                                             ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ①  INVOICE INGESTION (Entry Point)                                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                │
+│  Webhook (POST /insert)                                                                       │
+│      │                                                                                         │
+│      ├──► Read PDF Files ──► Extract File Info ──► Hash Schema Name                          │
+│      │                                                  │                                      │
+│      │                                                  ├──► Create Global Tables             │
+│      │                                                  │    (vat_companies,                  │
+│      │                                                  │     workflow_batches,               │
+│      │                                                  │     buildmeup_customers)            │
+│      │                                                  │                                      │
+│      │                                                  ├──► Create Company Schema            │
+│      │                                                  │    (invoices,                       │
+│      │                                                  │     invoice_check_summary,          │
+│      │                                                  │     excel_purchase_tax)             │
+│      │                                                  │                                      │
+│      ├──► Insert Invoice Records ──► Create Batch ─────┘                                     │
+│      │                                    │                                                    │
+│      │                                    ▼                                                    │
+│      │                          ┌────────────────────┐                                        │
+│      │                          │  Loop Over Items   │                                        │
+│      │                          │  (Split Batch)     │                                        │
+│      │                          └─────────┬──────────┘                                        │
+│      │                                    │ For Each Invoice                                  │
+│      │                                    │ (Non-blocking)                                    │
+│      │                                    ▼                                                    │
+└──────┼─────────────────────────────────────────────────────────────────────────────────────┬──┘
+       │                                                                                       │
+       │ Wait for all invoices                                                                │
+       │ (Poll is_done flag)                                                                  │
+       │                                                                                       │
+       └──► Load Customer Master Data (Excel) ──► Insert to DB ──► Respond to Webhook        │
+                                                                                              │
+                                                                                              │
+┌─────────────────────────────────────────────────────────────────────────────────────────────┼──┐
+│ ②  INVOICE EXTRACTION (AI/OCR Processing)                                                  │  │
+├─────────────────────────────────────────────────────────────────────────────────────────────┼──┤
+│                                                                                             │  │
+│  ◄───────────────────────────────────────────────────────────────────────────────────────────┘
+│  Execute Workflow Trigger (batch_id, file_path)
+│      │
+│      ├──► Analyze Document (Gemini Vision API)
+│      │         │
+│      │         ├──► Convert PDF to Markdown (OCR)
+│      │         │
+│      │         └──► Extract Structured Data
+│      │
+│      ├──► Gemini Chat (Data Normalization)
+│      │         │
+│      │         ├──► Parse Invoice Fields
+│      │         │    • Invoice Number
+│      │         │    • Date (DD/MM/YYYY)
+│      │         │    • Vendor Info (Name, VAT ID, Branch)
+│      │         │    • Buyer Info (Name, VAT ID, Branch, Address)
+│      │         │    • Amounts (Net, VAT, Grand Total)
+│      │         │
+│      │         └──► Apply Business Rules
+│      │              • Normalize VAT IDs (13 digits)
+│      │              • Standardize Branch Codes (00000 = HQ)
+│      │              • Thai Address Format
+│      │
+│      ├──► Clean & Parse AI Output
+│      │
+│      ├──► Validate Amounts (Math Checks)
+│      │         │
+│      │         ├──► VAT = Vatable × 7%
+│      │         ├──► Grand Total = Net + VAT
+│      │         ├──► Inclusive = Vatable + VAT
+│      │         └──► Net = Vatable + VAT Exempt
+│      │
+│      └──► Call "Invoice Processing Logic" ─────────────────────────┐
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┼──────────────────────┘
+                                                                      │
+                                                                      │
+┌─────────────────────────────────────────────────────────────────────┼──────────────────────┐
+│ ③  INVOICE PROCESSING LOGIC (Validation Orchestrator)              │                      │
+├─────────────────────────────────────────────────────────────────────┼──────────────────────┤
+│                                                                     │                      │
+│  ◄──────────────────────────────────────────────────────────────────┘                      │
+│  Execute Workflow Trigger (invoice_data)                                                   │
+│      │                                                                                      │
+│      ├──► Check if Customs Document? ────────────────────┐                                 │
+│      │         │                                          │                                 │
+│      │         ├─ YES ─► Mark Buyer Valid ──────────────┐│                                 │
+│      │         │                                         ││                                 │
+│      │         └─ NO ──► Continue Validation            ││                                 │
+│      │                                                   ││                                 │
+│      ├──► Update Invoices Table ◄─┐                     ││                                 │
+│      │                              │                    ││                                 │
+│      ├──► Insert Summary Record     │                    ││                                 │
+│      │                              │                    ││                                 │
+│      ├──► Check Vendor in DB ───────┼────────────────┐  ││                                 │
+│      │         │                    │                │  ││                                 │
+│      │         ├─ Found ────────────┼────────────────┼──┘│                                 │
+│      │         │                    │                │   │                                 │
+│      │         └─ Not Found         │                │   │                                 │
+│      │              │                │                │   │                                 │
+│      │              └────────────────┼────────────────┼───┼───► Call "RD VAT Lookup"       │
+│      │                               │                │   │     (Vendor) ──────────────┐   │
+│      │                               │                │   │                            │   │
+│      ├──► Check Buyer in DB ─────────┼────────────────┼───┘                            │   │
+│      │         │                    │                │                                 │   │
+│      │         ├─ Found ─────────────┼────────────────┼────► Call "Compare Address" ──┼─┐ │
+│      │         │                    │                │                                 │ │ │
+│      │         └─ Not Found          │                │                                 │ │ │
+│      │              │                │                │                                 │ │ │
+│      │              └────────────────┼────────────────┼────► Call "RD VAT Lookup"      │ │ │
+│      │                               │                │     (Buyer) ──────────────┐    │ │ │
+│      │                               │                │                           │    │ │ │
+│      ├──► Merge Results ◄─────────────┼────────────────┼───────────────────────────┼────┼─┼─┤
+│      │                               │                │                           │    │ │ │
+│      └──► Mark Invoice Done ◄─────────┼────────────────┼───────────────────────────┼────┼─┼─┤
+│                 │                    │                │                           │    │ │ │
+│                 └──────────────────────────────────────────────────────────────────────┼─┼─┤
+│                                      │                │                           │    │ │ │
+└──────────────────────────────────────┼────────────────┼───────────────────────────┼────┼─┼─┘
+                                       │                │                           │    │ │
+                                       │                │                           │    │ │
+┌──────────────────────────────────────┼────────────────┼───────────────────────────┼────┼─┼──┐
+│ ④  RD VAT LOOKUP (Tax Department API)                │                           │    │ │  │
+├──────────────────────────────────────┼────────────────┼───────────────────────────┼────┼─┼──┤
+│                                      │                │                           │    │ │  │
+│  ◄───────────────────────────────────┘                └────────────────────────────────┘ │  │
+│  Execute Workflow Trigger (vat_id, branch_id, type, invoice_number)                      │  │
+│      │                                                                                    │  │
+│      ├──► HTTP Request (SOAP)                                                            │  │
+│      │         │                                                                          │  │
+│      │         └──► Revenue Department API                                               │  │
+│      │              POST: https://rdws.rd.go.th/serviceRD3/vatserviceRD3.asmx            │  │
+│      │                                                                                    │  │
+│      ├──► XML to JSON Conversion                                                         │  │
+│      │                                                                                    │  │
+│      ├──► Normalize RD Response                                                          │  │
+│      │         │                                                                          │  │
+│      │         ├──► Extract Company Info                                                 │  │
+│      │         │    • VAT ID (13 digits)                                                 │  │
+│      │         │    • Branch Number (5 digits)                                           │  │
+│      │         │    • Company Name (Thai)                                                │  │
+│      │         │    • Full Address (Standardized Thai Format)                            │  │
+│      │         │                                                                          │  │
+│      │         └──► Handle Errors                                                        │  │
+│      │                                                                                    │  │
+│      ├──► Check RD Success ────────────────┐                                             │  │
+│      │         │                            │                                             │  │
+│      │         └─ YES ─► Upsert to DB       │                                             │  │
+│      │                   (vat_companies)    │                                             │  │
+│      │                                      │                                             │  │
+│      ├──► Switch Type ─────────────────────┼───┐                                         │  │
+│      │         │                            │   │                                         │  │
+│      │         ├─ Vendor ──► Update Summary │   │                                         │  │
+│      │         │             (vendor_vat_id_│   │                                         │  │
+│      │         │              info_status)  │   │                                         │  │
+│      │         │                            │   │                                         │  │
+│      │         └─ Buyer ───► Compare Address│───┼───────────────────────────────────┐     │  │
+│      │                       (if found) ────┘   │                                   │     │  │
+│      │                                          │                                   │     │  │
+│      └──► Return Results ──────────────────────────────────────────────────────────┼─────┼──┤
+│                                                  │                                   │     │  │
+└──────────────────────────────────────────────────┼───────────────────────────────────┼─────┼──┘
+                                                   │                                   │     │
+                                                   │                                   │     │
+┌──────────────────────────────────────────────────┼───────────────────────────────────┼─────┼──┐
+│ ⑤  COMPARE ADDRESS (Address Validation)          │                                   │     │  │
+├──────────────────────────────────────────────────┼───────────────────────────────────┼─────┼──┤
+│                                                  │                                   │     │  │
+│  ◄───────────────────────────────────────────────┘                                   │     │  │
+│  Execute Workflow Trigger (buyer_data)                   ◄───────────────────────────┘     │  │
+│      │                                                                                      │  │
+│      ├──► Query DB (vat_companies)                                                         │  │
+│      │         │                                                                            │  │
+│      │         └──► Get Registered Address                                                 │  │
+│      │                                                                                      │  │
+│      ├──► Merge PDF + DB Data                                                              │  │
+│      │                                                                                      │  │
+│      ├──► Compare PDF vs DB                                                                │  │
+│      │         │                                                                            │  │
+│      │         ├──► Normalize Addresses                                                    │  │
+│      │         │    • Convert Thai digits to Western                                       │  │
+│      │         │    • Expand abbreviations (จ. → จังหวัด)                                  │  │
+│      │         │    • Clean spaces and punctuation                                         │  │
+│      │         │                                                                            │  │
+│      │         ├──► Normalize Company Names                                                │  │
+│      │         │    • Remove legal terms (บริษัท, จำกัด, มหาชน)                           │  │
+│      │         │    • Remove punctuation                                                   │  │
+│      │         │                                                                            │  │
+│      │         └──► Subset Matching Algorithm                                              │  │
+│      │              • Split into words                                                     │  │
+│      │              • Check if all words from source exist in target                       │  │
+│      │              • Bidirectional check (PDF ⊂ DB OR DB ⊂ PDF)                           │  │
+│      │                                                                                      │  │
+│      ├──► Check Address Match ──────────────┐                                              │  │
+│      │         │                             │                                              │  │
+│      │         ├─ MATCH ─► Update Status = TRUE                                            │  │
+│      │         │                             │                                              │  │
+│      │         └─ MISMATCH ─► Update Status = FALSE                                        │  │
+│      │                                       │                                              │  │
+│      └──► Update invoice_check_summary ◄────┘                                              │  │
+│             (buyer_vat_info_status)                                                        │  │
+│                                                                                            │  │
+└────────────────────────────────────────────────────────────────────────────────────────────┼──┘
+                                                                                             │
+                                                                                             │
+┌────────────────────────────────────────────────────────────────────────────────────────────┼──┐
+│                               SEPARATE RECONCILIATION FLOW                                 │  │
+└────────────────────────────────────────────────────────────────────────────────────────────┼──┘
+                                                                                             │
+                                     ┌──────────────────┐                                    │
+                                     │  User/Frontend   │                                    │
+                                     │   (HTTP POST)    │                                    │
+                                     └────────┬─────────┘                                    │
+                                              │ Schema + Excel Path                          │
+                                              ▼                                              │
+┌────────────────────────────────────────────────────────────────────────────────────────────┼──┐
+│ ⑥  INVOICE RECONCILIATION (Excel vs PDF Comparison)                                       │  │
+├────────────────────────────────────────────────────────────────────────────────────────────┼──┤
+│                                                                                            │  │
+│  Webhook (POST /compare)                                                                  │  │
+│      │                                                                                     │  │
+│      ├──► Hash Schema Name                                                                │  │
+│      │                                                                                     │  │
+│      ├──► Read Excel File (Purchase Tax Report)                                           │  │
+│      │         │                                                                           │  │
+│      │         └──► Parse Spreadsheet                                                     │  │
+│      │                                                                                     │  │
+│      ├──► Normalize Excel Rows                                                            │  │
+│      │         │                                                                           │  │
+│      │         ├──► Clean Spaces & Special Chars                                          │  │
+│      │         ├──► Normalize VAT IDs (13 digits)                                         │  │
+│      │         ├──► Normalize Branch Codes (5 digits)                                     │  │
+│      │         └──► Extract Report Metadata                                               │  │
+│      │                                                                                     │  │
+│      ├──► Query Source ID (buildmeup_customers)                                           │  │
+│      │                                                                                     │  │
+│      ├──► Insert to excel_purchase_tax ────────────────────────────────────┐              │  │
+│      │                                                                      │              │  │
+│      ├──► Fetch Invoices from DB ──────────────────────────────────────────┼──┐           │  │
+│      │         │                                                            │  │           │  │
+│      │         └──► Query all PDF invoice records                           │  │           │  │
+│      │                                                                      │  │           │  │
+│      ├──► Normalize DB Rows                                                │  │           │  │
+│      │                                                                      │  │           │  │
+│      ├──► Merge Excel and DB ◄─────────────────────────────────────────────┼──┘           │  │
+│      │                                                                      │              │  │
+│      ├──► Compare Logic ◄───────────────────────────────────────────────────┘              │  │
+│      │         │                                                                           │  │
+│      │         ├──► Build Composite Key: (invoice_number + vat_id + branch)               │  │
+│      │         │                                                                           │  │
+│      │         ├──► Compare Fields:                                                       │  │
+│      │         │    • invoice_number_status                                               │  │
+│      │         │    • date_raw_status                                                     │  │
+│      │         │    • vendor_name_status (Normalized)                                     │  │
+│      │         │    • vendor_vat_id_status                                                │  │
+│      │         │    • vendor_branch_status                                                │  │
+│      │         │    • net_amount_status (±0.01 tolerance)                                 │  │
+│      │         │    • vat_amount_status (±0.01 tolerance)                                 │  │
+│      │         │    • grand_total_status (±0.01 tolerance)                                │  │
+│      │         │                                                                           │  │
+│      │         ├──► Detect Mismatches:                                                    │  │
+│      │         │    • missing_in_pdf (Excel has, PDF doesn't)                             │  │
+│      │         │    • missing_in_excel (PDF has, Excel doesn't)                           │  │
+│      │         │    • all_ok (All checks passed)                                          │  │
+│      │         │                                                                           │  │
+│      │         └──► Advanced Name Matching:                                               │  │
+│      │              • Remove: บริษัท, จำกัด, มหาชน, บจก, บมจ                              │  │
+│      │              • Remove: spaces, quotes, punctuation                                 │  │
+│      │              • Compare core brand names                                            │  │
+│      │                                                                                     │  │
+│      ├──► Insert Missing Invoices (Placeholders)                                          │  │
+│      │                                                                                     │  │
+│      ├──► Update invoice_check_summary                                                    │  │
+│      │         │                                                                           │  │
+│      │         └──► Write validation flags for each invoice                               │  │
+│      │                                                                                     │  │
+│      ├──► Fetch Comparison Report                                                         │  │
+│      │         │                                                                           │  │
+│      │         └──► Complex SQL with Deduplication (ROW_NUMBER)                           │  │
+│      │              • Latest Excel record per invoice                                     │  │
+│      │              • Latest PDF record per invoice                                       │  │
+│      │              • Latest Summary record per invoice                                   │  │
+│      │              • FULL OUTER JOIN                                                     │  │
+│      │                                                                                     │  │
+│      ├──► Convert to CSV File                                                             │  │
+│      │                                                                                     │  │
+│      ├──► Write to Disk                                                                   │  │
+│      │                                                                                     │  │
+│      └──► Return Success Response                                                         │  │
+│                                                                                            │  │
+└────────────────────────────────────────────────────────────────────────────────────────────┼──┘
+                                                                                             │
+                                                                                             │
+┌────────────────────────────────────────────────────────────────────────────────────────────┼──┐
+│                                   DATABASE SCHEMA                                          │  │
+└────────────────────────────────────────────────────────────────────────────────────────────┼──┘
+                                                                                             │
+ ┌─────────────────────────┐                                                                 │
+ │   GLOBAL SCHEMA         │◄────────────────────────────────────────────────────────────────┘
+ ├─────────────────────────┤
+ │ • vat_companies         │ ──► Stores VAT registration data from RD API
+ │ • buildmeup_customers   │ ──► Customer master data
+ │ • workflow_batches      │ ──► Batch processing tracking
+ │ • workflow_errors       │ ──► Error logging
+ └─────────────────────────┘
+
+ ┌───────────────────────────────┐
+ │   COMPANY SCHEMA (s_xxx_hash) │
+ ├───────────────────────────────┤
+ │ • invoices                    │ ──► PDF invoice data (extracted)
+ │ • invoice_check_summary       │ ──► Validation results (composite key: invoice_number + vat_id + branch)
+ │ • excel_purchase_tax          │ ──► Excel tax report data
+ └───────────────────────────────┘
+
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   EXTERNAL INTEGRATIONS                                        │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+ ┌────────────────────────┐
+ │  Google Gemini API     │
+ ├────────────────────────┤
+ │ • Gemini 2.0 Flash     │ ──► Invoice OCR & Data Extraction
+ │ • Vision + Text Model  │ ──► PDF → Structured JSON
+ └────────────────────────┘
+
+ ┌─────────────────────────────────────┐
+ │  Thailand Revenue Department API    │
+ ├─────────────────────────────────────┤
+ │ • SOAP Web Service                  │ ──► VAT ID Validation
+ │ • Company Info Lookup               │ ──► Registered Address Verification
+ │ rdws.rd.go.th/serviceRD3            │
+ └─────────────────────────────────────┘
+
+ ┌────────────────────────┐
+ │  PostgreSQL Database   │
+ ├────────────────────────┤
+ │ • Multi-Schema Design  │ ──► Tenant Isolation
+ │ • Composite Keys       │ ──► Deduplication
+ │ • UPSERT Operations    │ ──► Idempotency
+ └────────────────────────┘
+
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   KEY FEATURES                                                 │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+ ✓ AI-Powered OCR          - Gemini Vision API for high-accuracy Thai invoice extraction
+ ✓ Government Integration  - Real-time VAT validation with Revenue Department
+ ✓ Address Matching        - Advanced Thai address normalization & subset matching
+ ✓ Batch Processing        - Parallel invoice processing with progress tracking
+ ✓ Reconciliation          - Excel vs PDF comparison with tolerance matching
+ ✓ Multi-Tenant            - Schema-per-company for data isolation
+ ✓ Idempotent Operations   - Safe retries with UPSERT and composite keys
+ ✓ Error Handling          - Comprehensive error logging and recovery
+
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   WORKFLOW SUMMARY                                             │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+WORKFLOW 1: Invoice Ingestion (20 steps)
+  • Entry point for PDF upload
+  • Database schema creation
+  • Batch processing orchestration
+  • Customer master data loading
+
+WORKFLOW 2: Invoice Extraction (7 steps)
+  • AI-powered OCR with Gemini Vision
+  • Structured data extraction
+  • Business rules normalization
+  • Financial validation
+
+WORKFLOW 3: Invoice Processing Logic (17 steps)
+  • Validation orchestration
+  • VAT registration checks
+  • Conditional workflow execution
+  • Database updates
+
+WORKFLOW 4: RD VAT Lookup (11 steps)
+  • Thailand Revenue Department API integration
+  • SOAP request/response handling
+  • Company information caching
+  • Validation status updates
+
+WORKFLOW 5: Compare Address (6 steps)
+  • Advanced Thai address normalization
+  • Subset matching algorithm
+  • Company name comparison
+  • Validation result recording
+
+WORKFLOW 6: Invoice Reconciliation (21 steps)
+  • Excel vs PDF comparison
+  • Composite key matching
+  • Missing record detection
+  • CSV report generation
+
+TOTAL: 82 steps across 6 workflows

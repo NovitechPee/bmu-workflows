@@ -27,7 +27,7 @@
       "parameters": {
         "schema": {
           "__rl": true,
-          "value": "public",
+          "value": "global",
           "mode": "name"
         },
         "table": {
@@ -122,9 +122,11 @@
       "position": [368, 608],
       "id": "9ac1df32-ae15-4bd3-b6b2-0e4cae02210e",
       "name": "Create Batch Record",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       }
@@ -152,9 +154,11 @@
       "position": [192, 832],
       "id": "3c448acc-a535-4605-84ce-01f534109e53",
       "name": "Execute a SQL query",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       }
@@ -209,7 +213,7 @@
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [1024, 512],
+      "position": [1248, 496],
       "name": "Call My Sub-workflow1",
       "id": "e6fc030c-b415-4f1f-910d-b2bcf8bc756e",
       "alwaysOutputData": false
@@ -220,7 +224,7 @@
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [800, 496],
+      "position": [832, 496],
       "id": "040bda1d-b34b-44ff-8248-ab4716019347",
       "name": "Loop Over Items1"
     },
@@ -271,12 +275,15 @@
       "position": [192, -176],
       "id": "e51a5943-ffab-466f-871e-b17583ab5679",
       "name": "Create Companies Table1",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -432,9 +439,11 @@
       "position": [192, 272],
       "id": "511e4cf1-5c4e-4489-a332-4b1aebe3123b",
       "name": "Insert rows in a table1",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       },
@@ -645,9 +654,11 @@
       "position": [192, 1040],
       "id": "98159a49-6cc1-4a59-a962-7a04e649f0f3",
       "name": "Insert rows in a table",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
       }
@@ -663,12 +674,15 @@
       "position": [192, 64],
       "id": "7783600c-0107-4356-8e59-85dd550a7c60",
       "name": "Create Schema For Company",
+      "retryOnFail": true,
+      "maxTries": 5,
       "credentials": {
         "postgres": {
-          "id": "U97z4MVW6z8NDJpd",
+          "id": "ogntxmJ4Da1TGMOO",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -893,7 +907,7 @@
     "executionOrder": "v1",
     "availableInMCP": true
   },
-  "versionId": "76ebd4fa-70a2-42c8-aec6-68db16e3f6e9",
+  "versionId": "97081daa-7e5b-4392-9b5b-5f4c57df54a3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e25b4f0a8e6c0a7984427a0067c1260671f4803f14e4886f5e01dffd5ca1629c"
